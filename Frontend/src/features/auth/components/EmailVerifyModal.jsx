@@ -58,21 +58,10 @@ const EmailVerifyModal = ({
   return (
     <div className="fixed inset-0 z-100 flex items-center justify-center p-4">
       {/* Frosted Glass Backdrop */}
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={() => !actionLoading && setShowVerifyModal(false)}
-      ></div>
+      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm"></div>
 
       {/* Modal Content */}
       <div className="relative bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-4xl p-8 w-full max-w-md shadow-2xl animate-[fadeIn_0.3s_ease-out]">
-        <button
-          onClick={() => setShowVerifyModal(false)}
-          disabled={actionLoading}
-          className="absolute top-6 right-6 text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors disabled:opacity-50"
-        >
-          <X className="w-5 h-5" />
-        </button>
-
         <div className="flex flex-col items-center mb-8 pt-2">
           <div className="bg-neutral-100 dark:bg-neutral-900 p-4 rounded-full mb-5 shadow-sm border border-neutral-200 dark:border-neutral-800">
             <Mail className="w-8 h-8 text-neutral-900 dark:text-white" />
@@ -108,7 +97,7 @@ const EmailVerifyModal = ({
               type="submit"
               disabled={actionLoading || code.join("").length !== 4}
               className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-neutral-400 dark:disabled:bg-neutral-400 disabled:cursor-not-allowed"
-            > 
+            >
               {actionLoading && actionType === "resend"
                 ? "Resending..."
                 : actionLoading
