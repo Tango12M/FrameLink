@@ -3,6 +3,10 @@ import { Users, Plus, ArrowRight, Layout, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
+import {
+  acceptInvite,
+  getInviteDetails,
+} from "../../dashboard/services/dashboard.api";
 
 const TeamSetup = () => {
   const { handleLogout } = useAuth();
@@ -15,6 +19,8 @@ const TeamSetup = () => {
 
   // State for the invite input
   const [inviteCode, setInviteCode] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const [inviteDetails, setInviteDetails] = useState(null);
 
   const handleGlobalMouseMove = (e) =>
     setMousePos({ x: e.clientX, y: e.clientY });
@@ -27,16 +33,84 @@ const TeamSetup = () => {
     }
   };
 
-  const handleJoinTeam = () => {
+  const extractTokenFromLink = (input) => {
+    // Handle both full URL and token
+    try {
+      const url = new URL(input);
+      return url.pathname.split("/").pop();
+    } catch {
+      // If not a URL, assume it's a token
+      return input.trim();
+    }
+  };
+
+  const handleValidateInvite = async () => {
     if (inviteCode.trim() === "") {
       toast.error("Please enter a valid invite code or link.");
       return;
     }
 
-    // Simulate successful join
+    setIsValidating(true);
+    try {
+      const token = extractTokenFromLink(inviteCode);
+      const data = await getInviteDetails(token);
+
+      if (!data.success) {
+        if (data.expired) {
+          toast.error("This invite link has expired. Please ask for a new one.");
+        } else {
+          toast.error(data.message || "Invalid invite link");
+        }
+        setInviteDetails(null);
+        return;
+      }
+
+      setInviteDetails({
+        token,
+        projectName: data.projectName,
+        projectDescription: data.projectDescription,
+      });
+      toast.success("Valid invite!Verifying...");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Invalid invite link",
+      );
+      setInviteDetails(null);
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleJoinTeam = async () => {
+    if (!inviteDetails?.token) return;
+
+    setIsValidating(true);
+    try {
+      const data = await acceptInvite({
+        token: inviteDetails.token,
+      });
+
+      if (data.success) {
+        toast.success(data.message || "Successfully joined the workspace!");
+        setIsJoinModalOpen(false);
+        setInviteCode("");
+        setInviteDetails(null);
+        navigate("/");
+      }
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to join workspace",
+      );
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleSkipTeam = () => {
     setIsJoinModalOpen(false);
-    toast.success("Successfully joined the workspace!");
-    navigate("/projects");
+    setInviteCode("");
+    setInviteDetails(null);
+    navigate("/");
   };
 
   return (
@@ -92,46 +166,101 @@ const TeamSetup = () => {
         <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
           <div
             className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setIsJoinModalOpen(false)}
+            onClick={() => {
+              setIsJoinModalOpen(false);
+              setInviteDetails(null);
+              setInviteCode("");
+            }}
           ></div>
           <div className="relative bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-[2rem] p-8 w-full max-w-md shadow-2xl animate-[fadeIn_0.2s_ease-out] flex flex-col z-10">
-            <div className="flex items-center justify-center w-14 h-14 bg-neutral-100 dark:bg-neutral-900 rounded-full mb-6 mx-auto border border-neutral-200 dark:border-neutral-800 shadow-inner">
-              <Users className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
-            </div>
-            <h3 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white mb-2 text-center">
-              Join a Workspace
-            </h3>
-            <p className="text-neutral-500 text-sm font-light mb-8 text-center leading-relaxed">
-              Paste the invite link or code provided by your team administrator
-              to gain access.
-            </p>
+            {!inviteDetails ? (
+              <>
+                <div className="flex items-center justify-center w-14 h-14 bg-neutral-100 dark:bg-neutral-900 rounded-full mb-6 mx-auto border border-neutral-200 dark:border-neutral-800 shadow-inner">
+                  <Users className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
+                </div>
+                <h3 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white mb-2 text-center">
+                  Join a Workspace
+                </h3>
+                <p className="text-neutral-500 text-sm font-light mb-8 text-center leading-relaxed">
+                  Paste the invite link or code provided by your team administrator
+                  to gain access.
+                </p>
 
-            <div className="relative group mb-8">
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g. framelink.app/invite/..."
-                value={inviteCode}
-                onChange={(e) => setInviteCode(e.target.value)}
-                className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3.5 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-white transition-all shadow-inner placeholder:text-neutral-400 font-medium"
-                onKeyDown={(e) => e.key === "Enter" && handleJoinTeam()}
-              />
-            </div>
+                <div className="relative group mb-8">
+                  <input
+                    type="text"
+                    autoFocus
+                    disabled={isValidating}
+                    placeholder="e.g. framelink.app/invite/..."
+                    value={inviteCode}
+                    onChange={(e) => setInviteCode(e.target.value)}
+                    className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3.5 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-purple-500 dark:focus:ring-white transition-all shadow-inner placeholder:text-neutral-400 font-medium disabled:opacity-50"
+                    onKeyDown={(e) =>
+                      e.key === "Enter" && handleValidateInvite()
+                    }
+                  />
+                </div>
 
-            <div className="flex items-center gap-3 w-full">
-              <button
-                onClick={() => setIsJoinModalOpen(false)}
-                className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleJoinTeam}
-                className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold hover:opacity-90 transition-opacity shadow-md"
-              >
-                Join Team
-              </button>
-            </div>
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setIsJoinModalOpen(false);
+                      setInviteCode("");
+                      setInviteDetails(null);
+                    }}
+                    className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                    disabled={isValidating}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleValidateInvite}
+                    disabled={isValidating || !inviteCode.trim()}
+                    className="flex-1 py-3.5 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-bold hover:opacity-90 transition-opacity shadow-md disabled:opacity-50"
+                  >
+                    {isValidating ? "Validating..." : "Validate"}
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="flex items-center justify-center w-14 h-14 bg-green-100 dark:bg-green-900/30 rounded-full mb-6 mx-auto border border-green-200 dark:border-green-800 shadow-inner">
+                  <Users className="w-6 h-6 text-green-700 dark:text-green-300" />
+                </div>
+                <h3 className="text-2xl font-semibold tracking-tight text-neutral-900 dark:text-white mb-2 text-center">
+                  {inviteDetails.projectName}
+                </h3>
+                <p className="text-neutral-500 text-sm font-light mb-8 text-center leading-relaxed">
+                  {inviteDetails.projectDescription || "Join this workspace to start collaborating"}
+                </p>
+
+                <div className="bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl p-4 mb-8">
+                  <p className="text-xs font-medium text-neutral-600 dark:text-neutral-400 mb-2">
+                    You will join as:
+                  </p>
+                  <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                    Viewer (No editing rights)
+                  </p>
+                </div>
+
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={handleSkipTeam}
+                    disabled={isValidating}
+                    className="flex-1 py-3.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors disabled:opacity-50"
+                  >
+                    Decline
+                  </button>
+                  <button
+                    onClick={handleJoinTeam}
+                    disabled={isValidating}
+                    className="flex-1 py-3.5 px-4 rounded-xl bg-green-600 text-white font-bold hover:bg-green-700 transition-colors shadow-md disabled:opacity-50"
+                  >
+                    {isValidating ? "Joining..." : "Join Workspace"}
+                  </button>
+                </div>
+              </>
+            )}
           </div>
         </div>
       )}
@@ -168,7 +297,7 @@ const TeamSetup = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
             {/* Create Team Card */}
             <div
-              onClick={() => navigate("/team")}
+              onClick={() => navigate("/projects")}
               className="group cursor-pointer bg-white/60 dark:bg-[#111]/60 backdrop-blur-xl border border-neutral-200/60 dark:border-neutral-800/60 rounded-[2.5rem] p-8 md:p-10 hover:-translate-y-1.5 hover:shadow-xl transition-all duration-300 relative overflow-hidden"
             >
               <div className="absolute top-0 right-0 p-8 opacity-0 group-hover:opacity-100 transition-opacity duration-300 translate-x-4 group-hover:translate-x-0">

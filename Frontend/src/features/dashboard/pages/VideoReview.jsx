@@ -1,51 +1,110 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { ArrowLeft, Clock, Send, Info, User } from "lucide-react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useNavigate, useParams, useOutletContext } from "react-router-dom";
+import { toast } from "react-toastify";
+import { getComments, addComment } from "../services/dashboard.api";
 
 const VideoReview = () => {
   const navigate = useNavigate();
   const { id } = useParams();
+  const { tasks } = useOutletContext();
   const videoRef = useRef(null);
 
-  // --- NEW: Track the live time of the video ---
   const [currentVideoTime, setCurrentVideoTime] = useState(0);
   const [newComment, setNewComment] = useState("");
+  const [comments, setComments] = useState([]);
+  const [scene, setScene] = useState(null);
 
-  const [comments, setComments] = useState([
-    { id: 1, user: "Alex Chen", time: 2, displayTime: "00:02", text: "Can we cut this pause? It feels a bit too long." },
-    { id: 2, user: "Sarah Smith", time: 5, displayTime: "00:05", text: "The color grade looks a bit too warm in this shot. Let's cool it down." },
-    { id: 3, user: "Alex Chen", time: 8, displayTime: "00:08", text: "Perfect transition here!" }
-  ]);
-
-  // --- NEW: Helper function to format seconds into MM:SS ---
   const formatTime = (timeInSeconds) => {
     const minutes = Math.floor(timeInSeconds / 60).toString().padStart(2, "0");
     const seconds = Math.floor(timeInSeconds % 60).toString().padStart(2, "0");
     return `${minutes}:${seconds}`;
   };
 
+  const statusLabel = {
+    raw: "Raw Footage",
+    editing: "Editing",
+    review: "In Review",
+    approved: "Ready",
+  };
+
+  useEffect(() => {
+    if (!id || !tasks) return;
+    const currentScene = tasks.find((task) => task.id === id || task._id === id);
+    setScene(currentScene || null);
+  }, [id, tasks]);
+
+  useEffect(() => {
+    const fetchComments = async () => {
+      if (!id) return;
+      try {
+        const data = await getComments(id);
+        const fetchedComments = data.comments || data;
+        setComments(
+          Array.isArray(fetchedComments)
+            ? fetchedComments.map((comment) => ({
+                ...comment,
+                id: comment._id,
+                time: comment.timestamp || 0,
+                displayTime: formatTime(comment.timestamp || 0),
+                user:
+                  comment.userId?.name || comment.userId?.email ||
+                  comment.userId?.toString?.()?.slice(-6) ||
+                  "Reviewer",
+              }))
+            : [],
+        );
+      } catch (error) {
+        toast.error(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to load comments",
+        );
+      }
+    };
+
+    fetchComments();
+  }, [id]);
+
   const handleSeek = (time) => {
     if (videoRef.current) {
       videoRef.current.currentTime = time;
-      // --- UPDATED: Pause the video when jumping to a timestamp ---
-      videoRef.current.pause(); 
+      videoRef.current.pause();
     }
   };
 
-  const handleAddComment = (e) => {
+  const handleAddComment = async (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
+    if (!id) return;
 
-    const commentObj = {
-      id: Date.now(),
-      user: "Jane Doe",
-      time: currentVideoTime, // Uses the live tracked time
-      displayTime: formatTime(currentVideoTime),
-      text: newComment
-    };
+    try {
+      const data = await addComment({
+        sceneId: id,
+        text: newComment,
+        timestamp: Math.floor(currentVideoTime),
+      });
 
-    setComments([...comments, commentObj].sort((a, b) => a.time - b.time));
-    setNewComment("");
+      const created = data.comment || data;
+      const nextComment = {
+        ...created,
+        id: created._id,
+        user:
+          created.userId?.name || created.userId?.email ||
+          created.userId?.toString?.()?.slice(-6) ||
+          "You",
+        time: created.timestamp || Math.floor(currentVideoTime),
+        displayTime: formatTime(created.timestamp || Math.floor(currentVideoTime)),
+      };
+
+      setComments((prev) => [...prev, nextComment].sort((a, b) => a.time - b.time));
+      setNewComment("");
+      toast.success(data.message || "Comment added successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to add comment",
+      );
+    }
   };
 
   return (
@@ -78,10 +137,13 @@ const VideoReview = () => {
               <video 
                 ref={videoRef}
                 controls 
-                // --- NEW: Listen to time updates and save to state ---
                 onTimeUpdate={(e) => setCurrentVideoTime(e.target.currentTime)}
                 className="w-full aspect-video outline-none"
-                src="https://www.w3schools.com/html/mov_bbb.mp4" 
+                src={
+                  scene?.videoUrl
+                    ? scene.videoUrl
+                    : "https://www.w3schools.com/html/mov_bbb.mp4"
+                }
               />
             </div>
 
@@ -91,12 +153,12 @@ const VideoReview = () => {
                 <div>
                   <div className="flex items-center gap-3 mb-2">
                     <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-md">
-                      Raw Footage
+                      {statusLabel[scene?.status] || "Raw Footage"}
                     </span>
                     <span className="text-sm text-neutral-500 font-medium">ID: {id || "1775935"}</span>
                   </div>
                   <h1 className="text-2xl md:text-3xl font-medium text-neutral-900 dark:text-white tracking-tight">
-                    Q3 Marketing Campaign - Main Sequence
+                    {scene?.title || "Review Footage"}
                   </h1>
                 </div>
               </div>
@@ -109,7 +171,9 @@ const VideoReview = () => {
                     <Info className="w-4 h-4 text-neutral-500" /> Project Description
                   </div>
                   <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
-                    This is the raw sequence for the upcoming Q3 marketing push. Please review the pacing in the first 10 seconds. We need to ensure the messaging aligns with the new brand guidelines before moving to color grading.
+                    {scene?.title
+                      ? `Review the scene titled "${scene.title}" and add timecoded comments as needed.`
+                      : "Review the selected footage and leave comments connected to the current scene."}
                   </p>
                 </div>
                 
@@ -120,7 +184,9 @@ const VideoReview = () => {
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500 font-medium">Uploaded By</p>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-white">Jane Doe</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                        {scene?.uploadedBy ? "Team Member" : "Review Team"}
+                      </p>
                     </div>
                   </div>
                   <div className="flex items-center gap-3">
@@ -129,7 +195,11 @@ const VideoReview = () => {
                     </div>
                     <div>
                       <p className="text-xs text-neutral-500 font-medium">Uploaded On</p>
-                      <p className="text-sm font-medium text-neutral-900 dark:text-white">Today, 2:45 PM</p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                        {scene?.createdAt
+                          ? new Date(scene.createdAt).toLocaleString()
+                          : "Today, 2:45 PM"}
+                      </p>
                     </div>
                   </div>
                 </div>

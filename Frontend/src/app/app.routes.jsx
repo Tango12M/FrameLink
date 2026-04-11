@@ -4,6 +4,7 @@ import { createBrowserRouter } from "react-router-dom";
 import Dashboard from "../features/dashboard/pages/Dashboard";
 import TeamSetup from "../features/auth/pages/TeamSetup";
 import Auth from "../features/auth/pages/Auth";
+import InvitePage from "../features/auth/pages/InvitePage";
 import LandingPage from "./pages/LandingPage";
 import ErrorPage from "./pages/ErrorPage";
 import VideoReview from "../features/dashboard/pages/VideoReview"; // <-- NEW IMPORT
@@ -58,6 +59,10 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
     {
       path: "/landing",
       element: <LandingPage />,
+    },
+    {
+      path: "/invite/:token",
+      element: <InvitePage />,
     },
     {
       path: "/auth",

@@ -1,8 +1,8 @@
+import { useEffect, useState } from "react";
 import { Bell, Camera, CreditCard, Shield, User, Zap } from "lucide-react";
-import MagneticButton from "../../shared/components/MagnetButton";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "react-toastify";
-import Header from "../../shared/components/Header";
+import { useAuth } from "../../auth/hooks/useAuth";
 
 const tabs = [
   { id: "general", label: "General", icon: User },
@@ -13,16 +13,23 @@ const tabs = [
 
 const Profile = () => {
   const context = useOutletContext();
+  const { user } = useAuth();
   const { setActiveTab, setIsSidebarOpen, toggleNotif } = context;
   const activeTab = context?.activeTab || "general";
 
+  const [userInitials, setUserInitials] = useState("??");
+
+  useEffect(() => {
+    if (user?.username) {
+      setUserInitials(user.username.slice(0, 2).toUpperCase());
+    } else if (user?.email) {
+      setUserInitials(user.email.slice(0, 2).toUpperCase());
+    }
+  }, [user]);
+
+
   return (
     <>
-      <Header
-        header={{ name: "Account Settings" }}
-        setIsSidebarOpen={setIsSidebarOpen}
-        toggleNotif={toggleNotif}
-      />
       <div className="flex-1 overflow-y-auto p-6 md:p-10">
         <div className="max-w-5xl mx-auto flex flex-col md:flex-row gap-10">
           {/* Settings Sidebar */}
@@ -71,45 +78,42 @@ const Profile = () => {
                   </div>
 
                   <div className="flex items-center gap-6 pb-6 border-b border-neutral-200 dark:border-neutral-800">
-                    <div className="relative group cursor-pointer">
+                    <div className="relative group cursor-not-allowed">
                       <div className="w-24 h-24 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-3xl font-bold text-neutral-700 dark:text-neutral-300">
-                        JD
+                        {userInitials}
                       </div>
                       <div className="absolute inset-0 bg-black/50 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                        <Camera className="w-6 h-6 text-white" />
+                        <Camera className="w-6 h-6 text-white opacity-50" />
                       </div>
                     </div>
                     <div>
-                      <div className="flex gap-3">
-                        <button className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 font-medium px-4 py-2 rounded-xl text-sm hover:opacity-90 transition-opacity">
-                          Upload New
-                        </button>
-                        <button className="bg-neutral-100 dark:bg-neutral-900 text-neutral-900 dark:text-white border border-neutral-200 dark:border-neutral-800 font-medium px-4 py-2 rounded-xl text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800 transition-colors">
-                          Delete
-                        </button>
-                      </div>
+                      <p className="text-xs text-neutral-500 mb-2">
+                        Profile picture functionality coming soon
+                      </p>
                     </div>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-400">
-                        First Name
+                        Username
                       </label>
                       <input
                         type="text"
-                        defaultValue="Jane"
-                        className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
+                        value={user?.username || ""}
+                        readOnly
+                        className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-2.5 px-4 text-neutral-700 dark:text-neutral-300 focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1.5">
                       <label className="text-sm font-medium text-neutral-700 dark:text-neutral-400">
-                        Last Name
+                        Account Status
                       </label>
                       <input
                         type="text"
-                        defaultValue="Doe"
-                        className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
+                        value="Active"
+                        readOnly
+                        className="w-full bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl py-2.5 px-4 text-green-700 dark:text-green-300 font-medium focus:outline-none"
                       />
                     </div>
                     <div className="space-y-1.5 md:col-span-2">
@@ -118,23 +122,17 @@ const Profile = () => {
                       </label>
                       <input
                         type="email"
-                        defaultValue="jane.doe@creator.com"
-                        className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-2.5 px-4 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
+                        value={user?.email || ""}
+                        readOnly
+                        className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-2.5 px-4 text-neutral-700 dark:text-neutral-300 focus:outline-none"
                       />
                     </div>
                   </div>
 
-                  <div className="pt-4 flex justify-end">
-                    {/* TOAST TRIGGER */}
-                    <MagneticButton
-                      onClick={() =>
-                        toast.info("Profile updated successfully!")
-                      }
-                    >
-                      <div className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 font-medium px-6 py-3 rounded-xl shadow-lg">
-                        Save Changes
-                      </div>
-                    </MagneticButton>
+                  <div className="pt-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 p-4 rounded-xl">
+                    <p className="text-sm text-blue-700 dark:text-blue-300">
+                      Profile information is managed through your account settings. Changes will be synced across all projects.
+                    </p>
                   </div>
                 </div>
               )}
@@ -176,11 +174,12 @@ const Profile = () => {
                     {/* TOAST TRIGGER */}
                     <button
                       onClick={() =>
-                        toast.info("Password updated successfully!")
+                        toast.info("Password update feature coming soon!")
                       }
-                      className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 font-medium px-6 py-2.5 rounded-xl text-sm mt-2 hover:opacity-90"
+                      className="bg-neutral-900 dark:bg-white text-white dark:text-neutral-950 font-medium px-6 py-2.5 rounded-xl text-sm mt-2 hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed"
+                      disabled
                     >
-                      Update Password
+                      Update Password (Coming Soon)
                     </button>
                   </div>
 

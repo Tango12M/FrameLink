@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle,
   Clock,
@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
+import { useAuth } from "../../auth/hooks/useAuth";
 
 const Workspace = () => {
   const {
@@ -23,18 +24,40 @@ const Workspace = () => {
     tasks,
     columns,
     onOpenVideo,
-    setIsModalOpen, 
-    handleMoveTask // Make sure this is pulled from context!
+    setIsModalOpen,
+    handleMoveTask,
   } = useOutletContext();
 
-  const [user] = useState({ 
-    name: "Jane Doe", 
-    admin: "admin" 
-  });
+  const { user } = useAuth();
+  const [currentRole, setCurrentRole] = useState("none");
 
-  const isAdmin = user?.admin === "admin";
+  useEffect(() => {
+    const currentUserId = user?._id || user?.id;
+    const currentMember = activeProject?.members?.find((member) => {
+      const memberId = member.user?._id || member.user;
+      return memberId === currentUserId;
+    });
 
-  // --- DRAG AND DROP HANDLERS ---
+    setCurrentRole(currentMember?.role || "none");
+  }, [activeProject, user]);
+
+  const isAdmin = currentRole === "admin";
+
+  const statusLabel = {
+    raw: "Raw Footage",
+    editing: "Editing",
+    review: "In Review",
+    approved: "Ready",
+  };
+
+  const labelToStatus = {
+    "Raw Footage": "raw",
+    Editing: "editing",
+    "In Review": "review",
+    Ready: "approved",
+  };
+
+  // --- DRAG AND DROP HANDlers ---
   const handleDragStart = (e, taskId) => {
     if (!isAdmin) return;
     e.dataTransfer.setData("taskId", taskId);
@@ -47,10 +70,10 @@ const Workspace = () => {
   const handleDrop = (e, targetColumn) => {
     e.preventDefault();
     if (!isAdmin) return;
-    
+
     const taskId = e.dataTransfer.getData("taskId");
     if (taskId && handleMoveTask) {
-      handleMoveTask(Number(taskId), targetColumn);
+      handleMoveTask(taskId, labelToStatus[targetColumn]);
     }
   };
 
@@ -96,7 +119,7 @@ const Workspace = () => {
                 </div>
               </div>
               <h3 className="text-4xl font-medium tracking-tight mb-1 text-neutral-900 dark:text-white">
-                {tasks.filter((t) => t.status === "In Review").length}
+                {tasks.filter((t) => t.status === "review").length}
               </h3>
               <p className="text-sm text-neutral-500 font-medium">Pending Review</p>
             </div>
@@ -106,7 +129,9 @@ const Workspace = () => {
                   <CheckCircle className="w-5 h-5 text-neutral-800 dark:text-neutral-200" />
                 </div>
               </div>
-              <h3 className="text-4xl font-medium tracking-tight mb-1 text-neutral-900 dark:text-white">0</h3>
+              <h3 className="text-4xl font-medium tracking-tight mb-1 text-neutral-900 dark:text-white">
+                {tasks.filter((t) => t.status === "approved").length}
+              </h3>
               <p className="text-sm text-neutral-700 dark:text-neutral-400 font-medium">Published in Project</p>
             </div>
           </div>
@@ -114,7 +139,7 @@ const Workspace = () => {
           <div className="max-w-7xl mx-auto flex flex-col">
             <div className="flex flex-col md:flex-row items-start md:items-center justify-between mb-6 gap-4">
               <h2 className="text-2xl font-medium tracking-tight text-neutral-900 dark:text-white">
-                {activeProject.name || "Active Pipeline"}
+                {activeProject.title || "Active Pipeline"}
               </h2>
               
               <div className="flex items-center gap-3">
@@ -136,7 +161,9 @@ const Workspace = () => {
             
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 min-h-[30rem] pb-6">
               {columns.map((column) => {
-                const columnTasks = tasks.filter((t) => t.status === column);
+                const columnTasks = tasks.filter(
+                  (t) => statusLabel[t.status] === column,
+                );
 
                 return (
                   <div
@@ -180,23 +207,23 @@ const Workspace = () => {
                           <div className="relative z-10">
                             <div className="flex items-start justify-between mb-3">
                               <div className="px-2 py-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
-                                {task.tag}
+                                {statusLabel[task.status] || "Scene"}
                               </div>
                               {isAdmin && (
                                 <GripHorizontal className="w-4 h-4 text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 transition-colors" />
                               )}
                             </div>
                             <h4 className="text-neutral-900 dark:text-white font-medium mb-4 leading-tight">
-                              {task.title}
+                              {task.title || "Untitled Scene"}
                             </h4>
                             <div className="flex items-center justify-between mt-auto">
                               <div className="w-6 h-6 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-[10px] font-bold text-neutral-700 dark:text-neutral-300">
-                                JD
+                                {task.title?.charAt(0)?.toUpperCase() || "S"}
                               </div>
-                              {task.comments > 0 && (
+                              {(task.comments?.length ?? 0) > 0 && (
                                 <div className="flex items-center gap-1.5 text-xs font-medium text-neutral-500 dark:text-neutral-400">
                                   <MessageSquare className="w-3.5 h-3.5" />
-                                  {task.comments}
+                                  {task.comments?.length ?? 0}
                                 </div>
                               )}
                             </div>

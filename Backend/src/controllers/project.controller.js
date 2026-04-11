@@ -31,7 +31,7 @@ export const getUserProjects = async (req, res) => {
 
     const projects = await Project.find({
       "members.user": userId,
-    });
+    }).populate("members.user", "username email");
 
     res.json({
       success: true,
@@ -97,6 +97,7 @@ export const addMember = async (req, res) => {
 export const updateMemberRole = async (req, res) => {
   try {
     const { projectId, userId, role } = req.body;
+    const currentUserId = req.user.id;
 
     const project = await Project.findById(projectId);
     if (!project) {
@@ -106,13 +107,22 @@ export const updateMemberRole = async (req, res) => {
       });
     }
 
+    // Check if current user is admin
     const isAdmin = project.members.some(
-      (m) => m.user.toString() === req.user.id && m.role === "admin",
+      (m) => m.user.toString() === currentUserId && m.role === "admin",
     );
     if (!isAdmin) {
       return res.status(403).json({
         success: false,
         message: "Admin only action",
+      });
+    }
+
+    // Prevent admin from changing their own role
+    if (userId === currentUserId) {
+      return res.status(400).json({
+        success: false,
+        message: "Cannot change your own role. Contact another admin.",
       });
     }
 
@@ -126,6 +136,9 @@ export const updateMemberRole = async (req, res) => {
 
     member.role = role;
     await project.save();
+
+    // Re-populate members data before returning
+    await project.populate("members.user", "username email");
 
     res.json({
       success: true,

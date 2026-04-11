@@ -15,6 +15,7 @@ import EmailVerifyModal from "../components/EmailVerifyModal";
 import { ThemeContext } from "../../../app/theme.context";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
+import { getMyProjects } from "../../dashboard/services/dashboard.api";
 
 const Auth = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
@@ -74,8 +75,23 @@ const Auth = () => {
       email: formData.email,
       password: formData.password,
     });
+    
     if (result?.success) {
-      navigate("/setup");
+      try {
+        // Fetch user projects to determine redirect
+        const projectData = await getMyProjects();
+        const projects = projectData.projects || projectData || [];
+        
+        // If user has projects, redirect to dashboard; otherwise to setup
+        if (Array.isArray(projects) && projects.length > 0) {
+          navigate("/");
+        } else {
+          navigate("/setup");
+        }
+      } catch (error) {
+        // If fetch fails, default to setup
+        navigate("/setup");
+      }
     }
   };
 

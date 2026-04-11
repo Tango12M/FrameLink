@@ -132,20 +132,51 @@ export const getInviteDetails = async (req, res) => {
     if (!invite) {
       return res.status(404).json({
         success: false,
-        message: "Invalid invite",
+        message: "Invalid invite link",
+        expired: false,
+      });
+    }
+
+    // Check if already accepted
+    if (invite.status === "accepted") {
+      return res.status(400).json({
+        success: false,
+        message: "This invite link has already been used",
+        expired: false,
+      });
+    }
+
+    // Check if expired
+    if (invite.expiresAt < new Date()) {
+      return res.status(400).json({
+        success: false,
+        message: "Invite link has expired",
+        expired: true,
+      });
+    }
+
+    if (!invite.projectId) {
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+        expired: false,
       });
     }
 
     res.json({
       success: true,
       message: "Invite details retrieved successfully",
+      projectId: invite.projectId._id,
       projectName: invite.projectId.title,
+      projectDescription: invite.projectId.description,
       status: invite.status,
     });
   } catch (err) {
     res.status(500).json({
       success: false,
       message: err.message,
+      expired: false,
     });
   }
+};
 };

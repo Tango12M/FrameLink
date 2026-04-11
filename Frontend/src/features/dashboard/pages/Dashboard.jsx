@@ -17,24 +17,59 @@ import { useDashboard } from "../hooks/useDashboard";
 // Shared Components
 import ThemeToggle from "../../shared/components/ThemeToggle";
 import SearchBar from "../../shared/components/SearchBar";
-import SearchModal from "../../shared/components/SearchModal"; 
+import SearchModal from "../../shared/components/SearchModal";
+import { useAuth } from "../../auth/hooks/useAuth";
 
 // REMOVED onOpenVideo from props, defined natively inside instead
 const Dashboard = ({ toggleNotif }) => {
   const navigate = useNavigate();
 
   const {
-    handleCreateTask,
-    handleFetchTasks,
     handleCreateProject,
     handleFetchProjects,
+    handleFetchScenes,
+    handleCreateScene,
     loading,
     projects,
     tasks,
   } = useDashboard();
+  const { handleLogout } = useAuth();
 
   const [activeProject, setActiveProject] = useState(null);
   const [localTasks, setLocalTasks] = useState(tasks || []);
+  const [sceneTitle, setSceneTitle] = useState("");
+  const [sceneFile, setSceneFile] = useState(null);
+
+  const statusLabel = {
+    raw: "Raw Footage",
+    editing: "Editing",
+    review: "In Review",
+    approved: "Ready",
+  };
+  const labelToStatus = {
+    "Raw Footage": "raw",
+    Editing: "editing",
+    "In Review": "review",
+    Ready: "approved",
+  };
+
+  useEffect(() => {
+    handleFetchProjects();
+  }, []);
+
+  useEffect(() => {
+    if (projects && projects.length > 0 && !activeProject) {
+      setActiveProject(projects[0]);
+    }
+  }, [projects, activeProject]);
+
+  useEffect(() => {
+    if (activeProject?.id) {
+      handleFetchScenes(activeProject.id);
+    } else {
+      setLocalTasks([]);
+    }
+  }, [activeProject]);
 
   useEffect(() => {
     if (tasks && tasks.length > 0) {
@@ -43,11 +78,71 @@ const Dashboard = ({ toggleNotif }) => {
   }, [tasks]);
 
   const handleMoveTask = (taskId, newStatus) => {
-    setLocalTasks((prevTasks) => 
-      prevTasks.map((task) => 
-        task.id === taskId ? { ...task, status: newStatus } : task
-      )
+    setLocalTasks((prevTasks) =>
+      prevTasks.map((task) =>
+        task.id === taskId ? { ...task, status: newStatus } : task,
+      ),
     );
+  };
+
+  const handleUploadScene = async () => {
+    if (!activeProject) {
+      toast.error("Select a project before uploading footage.");
+      return;
+    }
+    if (!sceneTitle.trim()) {
+      toast.error("Please enter a scene title.");
+      return;
+    }
+    if (!sceneFile) {
+      toast.error("Please choose an MP4 video file.");
+      return;
+    }
+    if (
+      sceneFile.type !== "video/mp4" &&
+      !sceneFile.name.toLowerCase().endsWith(".mp4")
+    ) {
+      toast.error("Only MP4 video files are allowed.");
+      return;
+    }
+    if (sceneFile.size > 10 * 1024 * 1024) {
+      toast.error("File too large. Maximum size is 10MB.");
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append("projectId", activeProject.id);
+    formData.append("title", sceneTitle);
+    formData.append("video", sceneFile);
+
+    try {
+      await handleCreateScene(formData, {
+        onUploadProgress: (progressEvent) => {
+          if (!progressEvent.total) return;
+          const percent = Math.round(
+            (progressEvent.loaded * 100) / progressEvent.total,
+          );
+          setUploadProgress(percent);
+        },
+      });
+      setSceneTitle("");
+      setSceneFile(null);
+      setIsModalOpen(false);
+      toast.success("Scene uploaded successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message ||
+          error.message ||
+          "Failed to upload scene",
+      );
+    } finally {
+      setUploadProgress(0);
+    }
+  };
+
+  const handleFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setSceneFile(file);
   };
 
   // --- NEW: Routing for the Video Review page ---
@@ -61,8 +156,8 @@ const Dashboard = ({ toggleNotif }) => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState(null);
-  const [isCmdOpen, setIsCmdOpen] = useState(false); 
-  
+  const [isCmdOpen, setIsCmdOpen] = useState(false);
+
   const columns = ["Raw Footage", "Editing", "In Review", "Ready"];
 
   const handleGlobalMouseMove = (e) =>
@@ -71,51 +166,20 @@ const Dashboard = ({ toggleNotif }) => {
   useEffect(() => {
     const handleKeyDown = (e) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
-        e.preventDefault(); 
-        setIsCmdOpen(true); 
+        e.preventDefault();
+        setIsCmdOpen(true);
       }
     };
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  const simulateUpload = () => {
-    setUploadProgress(1);
-    let progress = 1;
-    const interval = setInterval(() => {
-      progress += Math.floor(Math.random() * 15) + 5;
-      if (progress >= 100) {
-        progress = 100;
-        clearInterval(interval);
-        setTimeout(async () => {
-          const newTask = {
-            id: Date.now(),
-            title: "New Raw Sequence_" + Math.floor(Math.random() * 1000),
-            status: "Raw Footage",
-            tag: "New",
-            comments: 0,
-          };
-          
-          setLocalTasks(prevTasks => [newTask, ...prevTasks]);
-          setIsModalOpen(false);
-          setUploadProgress(0);
-          toast.success("Footage uploaded successfully!");
-
-          try {
-            await handleCreateTask(newTask);
-          } catch (error) {
-            console.log("Backend not connected yet, but UI is updated.");
-          }
-
-        }, 600);
-      }
-      setUploadProgress(progress);
-    }, 200);
-  };
-
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setIsLogoutModalOpen(false);
-    navigate("/landing");
+    const result = await handleLogout();
+    if (result?.success) {
+      navigate("/landing");
+    }
   };
 
   return (
@@ -185,25 +249,69 @@ const Dashboard = ({ toggleNotif }) => {
               )}
             </div>
             {uploadProgress === 0 ? (
-              <div
-                onClick={simulateUpload}
-                className="border-2 border-dashed border-neutral-300 dark:border-neutral-700 bg-neutral-50 dark:bg-neutral-900/50 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-2xl p-10 flex flex-col items-center justify-center text-center cursor-pointer transition-colors group"
-              >
-                <div className="w-16 h-16 bg-white dark:bg-[#111] shadow-sm border border-neutral-200 dark:border-neutral-800 rounded-full flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
-                  <UploadCloud className="w-8 h-8 text-neutral-500 dark:text-neutral-400" />
+              <div className="space-y-6">
+                <p className="text-sm text-neutral-500 dark:text-neutral-400">
+                  Upload an MP4 video for the active project. The backend
+                  accepts up to 10MB per upload.
+                </p>
+
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Scene Title
+                    </label>
+                    <input
+                      type="text"
+                      value={sceneTitle}
+                      onChange={(e) => setSceneTitle(e.target.value)}
+                      placeholder="e.g. Scene 1 - Opening"
+                      className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl px-4 py-3 text-sm text-neutral-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-neutral-900 dark:focus:ring-white transition-shadow placeholder:text-neutral-400"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
+                      Video File
+                    </label>
+                    <input
+                      type="file"
+                      accept="video/mp4"
+                      onChange={handleFileChange}
+                      className="w-full text-sm text-neutral-700 dark:text-neutral-200 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-neutral-900 file:text-white dark:file:bg-white dark:file:text-neutral-900 bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl p-3"
+                    />
+                    {sceneFile && (
+                      <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                        Selected file: {sceneFile.name} ·{" "}
+                        {(sceneFile.size / (1024 * 1024)).toFixed(1)} MB
+                      </p>
+                    )}
+                  </div>
                 </div>
-                <p className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-                  Click or drag raw footage here
-                </p>
-                <p className="text-sm text-neutral-500 font-light">
-                  Supports MP4, MOV, RAW up to 50GB.
-                </p>
+
+                <div className="flex items-center gap-3 w-full">
+                  <button
+                    onClick={() => {
+                      setIsModalOpen(false);
+                      setSceneTitle("");
+                      setSceneFile(null);
+                    }}
+                    className="flex-1 py-3 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleUploadScene}
+                    className="flex-1 py-3 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium hover:opacity-90 transition-opacity shadow-sm"
+                  >
+                    Upload Scene
+                  </button>
+                </div>
               </div>
             ) : (
               <div className="py-8 flex flex-col items-center text-center">
                 <FileVideo className="w-12 h-12 text-neutral-400 mb-6 animate-pulse" />
                 <p className="text-lg font-medium text-neutral-900 dark:text-white mb-2">
-                  Ingesting footage...
+                  Uploading your video...
                 </p>
                 <div className="w-full bg-neutral-200 dark:bg-neutral-800 h-2 rounded-full overflow-hidden mt-4">
                   <div
@@ -222,8 +330,10 @@ const Dashboard = ({ toggleNotif }) => {
 
       <header className="relative z-50 w-full bg-white/80 dark:bg-[#111]/80 backdrop-blur-xl border-b border-neutral-200 dark:border-neutral-800">
         <div className="max-w-screen-2xl mx-auto px-4 md:px-6 h-16 flex items-center justify-between">
-          
-          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate("/")}>
+          <div
+            className="flex items-center gap-2 cursor-pointer"
+            onClick={() => navigate("/")}
+          >
             <div className="bg-neutral-900 dark:bg-white p-1.5 rounded-lg shadow-sm">
               <Layout className="w-5 h-5 text-white dark:text-neutral-900" />
             </div>
@@ -259,7 +369,10 @@ const Dashboard = ({ toggleNotif }) => {
 
           <div className="flex items-center gap-3 md:gap-5">
             <div className="hidden md:block">
-              <SearchBar searchLabel="Search..." setIsCmdOpen={() => setIsCmdOpen(true)} />
+              <SearchBar
+                searchLabel="Search..."
+                setIsCmdOpen={() => setIsCmdOpen(true)}
+              />
             </div>
 
             <ThemeToggle />
@@ -279,7 +392,7 @@ const Dashboard = ({ toggleNotif }) => {
               <Menu className="w-6 h-6" />
             </button>
 
-            <div 
+            <div
               className="hidden md:flex items-center gap-3 pl-4 border-l border-neutral-200 dark:border-neutral-800 cursor-pointer group"
               onClick={() => navigate("/profile")}
             >
@@ -303,10 +416,13 @@ const Dashboard = ({ toggleNotif }) => {
         {isSidebarOpen && (
           <div className="md:hidden absolute top-16 left-0 w-full bg-white dark:bg-[#111] border-b border-neutral-200 dark:border-neutral-800 shadow-xl px-4 py-4 flex flex-col gap-2">
             <div className="mb-2">
-              <SearchBar searchLabel="Search..." setIsCmdOpen={() => {
-                setIsSidebarOpen(false);
-                setIsCmdOpen(true);
-              }} />
+              <SearchBar
+                searchLabel="Search..."
+                setIsCmdOpen={() => {
+                  setIsSidebarOpen(false);
+                  setIsCmdOpen(true);
+                }}
+              />
             </div>
 
             <NavLink
@@ -314,7 +430,9 @@ const Dashboard = ({ toggleNotif }) => {
               onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  isActive ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium" : "text-neutral-600 dark:text-neutral-400"
+                  isActive
+                    ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium"
+                    : "text-neutral-600 dark:text-neutral-400"
                 }`
               }
             >
@@ -325,18 +443,20 @@ const Dashboard = ({ toggleNotif }) => {
               onClick={() => setIsSidebarOpen(false)}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  isActive ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium" : "text-neutral-600 dark:text-neutral-400"
+                  isActive
+                    ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium"
+                    : "text-neutral-600 dark:text-neutral-400"
                 }`
               }
             >
               <Folder className="w-5 h-5" /> Projects
             </NavLink>
-            
+
             <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2"></div>
             <button
               onClick={() => {
                 setIsSidebarOpen(false);
-                setIsLogoutModalOpen(true); 
+                setIsLogoutModalOpen(true);
               }}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
             >
@@ -352,12 +472,12 @@ const Dashboard = ({ toggleNotif }) => {
         <Outlet
           context={{
             setIsSidebarOpen,
-            activeProject,      
-            setActiveProject,   
+            activeProject,
+            setActiveProject,
             toggleNotif,
             setIsModalOpen,
             navigate,
-            tasks: localTasks, 
+            tasks: localTasks,
             handleMoveTask,
             columns,
             onOpenVideo,
@@ -365,8 +485,8 @@ const Dashboard = ({ toggleNotif }) => {
             mousePos,
             setActiveTab,
             activeTab,
-            isCmdOpen,      
-            setIsCmdOpen,    
+            isCmdOpen,
+            setIsCmdOpen,
           }}
         />
       </main>

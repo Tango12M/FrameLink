@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   CheckCircle,
   Clock,
@@ -14,93 +14,107 @@ import {
   Copy,
   Link,
   Trash2,
-  UserCog
+  UserCog,
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { toast } from "react-toastify";
-
-// 1. Cleaned up initial data to just the Owner
-const initialTeamMembers = [
-  {
-    id: 1,
-    name: "Jane Doe",
-    email: "jane@creator.com",
-    role: "Owner",
-    status: "Active",
-    avatar: "JD",
-  }
-];
+import {
+  createInviteLink,
+  updateProjectMemberRole,
+} from "../services/dashboard.api";
 
 const Teams = () => {
-  const { mousePos } = useOutletContext();
-  
-  // State for the team list
-  const [members, setMembers] = useState(initialTeamMembers);
-  
-  // State for the Invite Modal
+  const { mousePos, activeProject } = useOutletContext();
+
+  const [members, setMembers] = useState([]);
+  const [inviteLink, setInviteLink] = useState("");
   const [isInviteModalOpen, setIsInviteModalOpen] = useState(false);
 
-  // NEW: State for the Manage User Modal
   const [isManageModalOpen, setIsManageModalOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState(null);
   const [selectedRole, setSelectedRole] = useState("");
 
-  const inviteLink = "https://framelink.app/invite/workspace-x7y9";
+  useEffect(() => {
+    if (!activeProject?.members) {
+      setMembers([]);
+      return;
+    }
+
+    setMembers(
+      activeProject.members.map((member) => ({
+        ...member,
+        id: member.user?._id || member.user,
+      })),
+    );
+  }, [activeProject]);
 
   const handleCopyLink = () => {
+    if (!inviteLink) {
+      toast.error("Generate an invite link first.");
+      return;
+    }
     navigator.clipboard.writeText(inviteLink);
     toast.info("Invite link copied to clipboard!");
   };
 
-  const handleSimulateInvite = () => {
-    if (members.length >= 5) {
-      toast.error("Seat limit reached! Upgrade your plan.");
-      setIsInviteModalOpen(false);
+  const handleCreateInviteLink = async () => {
+    if (!activeProject?.id) {
+      toast.error("Select a project before creating an invite link.");
       return;
     }
 
-    const newUser = {
-      id: Date.now(),
-      name: "New Collaborator",
-      email: "new.user" + Math.floor(Math.random() * 100) + "@gmail.com",
-      role: "Reviewer",
-      status: "Invited",
-      avatar: "NC",
-    };
-
-    setMembers([...members, newUser]);
-    setIsInviteModalOpen(false);
-    toast.success("New member successfully invited!");
+    try {
+      const data = await createInviteLink({ projectId: activeProject.id });
+      setInviteLink(data.link || "");
+      toast.success(data.message || "Invite link created successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to create invite link",
+      );
+    }
   };
 
-  // --- NEW: User Management Functions ---
   const handleOpenManage = (user) => {
     setSelectedUser(user);
-    setSelectedRole(user.role);
+    setSelectedRole(user.role || "none");
     setIsManageModalOpen(true);
   };
 
-  const handleSaveRole = () => {
-    setMembers(members.map(m => 
-      m.id === selectedUser.id ? { ...m, role: selectedRole } : m
-    ));
-    setIsManageModalOpen(false);
-    toast.success(`${selectedUser.name}'s role updated to ${selectedRole}`);
-  };
-
-  const handleRemoveUser = () => {
-    // Safety check: Prevent removing the only owner
-    const ownersCount = members.filter(m => m.role === "Owner").length;
-    if (selectedUser.role === "Owner" && ownersCount <= 1) {
-      toast.error("You cannot remove the only Workspace Owner.");
+  const handleSaveRole = async () => {
+    if (!selectedUser || !activeProject?.id) {
+      toast.error("No user selected.");
       return;
     }
 
-    setMembers(members.filter(m => m.id !== selectedUser.id));
-    setIsManageModalOpen(false);
-    toast.success(`${selectedUser.name} removed from the workspace.`);
+    try {
+      const response = await updateProjectMemberRole({
+        projectId: activeProject.id,
+        userId: selectedUser.id,
+        role: selectedRole,
+      });
+
+      const updatedMembers = response.project?.members || [];
+      setMembers(
+        updatedMembers.map((member) => ({
+          ...member,
+          id: member.user?._id || member.user,
+        })),
+      );
+      setSelectedUser(null);
+      setIsManageModalOpen(false);
+      toast.success(response.message || "Role updated successfully");
+    } catch (error) {
+      toast.error(
+        error.response?.data?.message || error.message || "Failed to update role",
+      );
+    }
   };
 
+  const handleRemoveUser = () => {
+    // Safety check: Removing members is not supported by the current backend API.
+    toast.error("Removing members is not supported by the current backend API.");
+    setIsManageModalOpen(false);
+  };
   return (
     <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-10 relative">
       
@@ -130,7 +144,7 @@ const Teams = () => {
             </div>
             
             <p className="text-sm text-neutral-500 dark:text-neutral-400 mb-4">
-              Share this secure link with your team member. Anyone with this link can join as a Reviewer.
+              Generate a secure invite link for the current project. New members join with a default backend role of "none".
             </p>
 
             <div className="flex items-center gap-2 mb-8">
@@ -154,10 +168,10 @@ const Teams = () => {
                 Cancel
               </button>
               <button
-                onClick={handleSimulateInvite}
+                onClick={handleCreateInviteLink}
                 className="flex-1 py-3 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium hover:opacity-90 transition-opacity shadow-sm"
               >
-                Add Member
+                Generate Link
               </button>
             </div>
           </div>
@@ -179,9 +193,11 @@ const Teams = () => {
                 </div>
                 <div>
                   <h3 className="text-xl font-medium tracking-tight text-neutral-900 dark:text-white leading-tight">
-                    Manage {selectedUser.name}
+                    Manage {selectedUser.name || selectedUser.id}
                   </h3>
-                  <p className="text-xs text-neutral-500">{selectedUser.email}</p>
+                  <p className="text-xs text-neutral-500">
+                    {selectedUser.email || selectedUser.id}
+                  </p>
                 </div>
               </div>
               <button
@@ -197,7 +213,7 @@ const Teams = () => {
                 Workspace Role
               </label>
               <div className="grid grid-cols-1 gap-2">
-                {["Owner", "Editor", "Reviewer"].map((role) => (
+                {["admin", "editor", "reviewer", "none"].map((role) => (
                   <button
                     key={role}
                     onClick={() => setSelectedRole(role)}
@@ -208,11 +224,12 @@ const Teams = () => {
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      {role === "Owner" && <Crown className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
-                      {role === "Editor" && <Video className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
-                      {role === "Reviewer" && <User className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
+                      {role === "admin" && <Crown className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
+                      {role === "editor" && <Video className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
+                      {role === "reviewer" && <User className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
+                      {role === "none" && <Shield className={`w-4 h-4 ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-500"}`} />}
                       <span className={`font-medium ${selectedRole === role ? "text-neutral-900 dark:text-white" : "text-neutral-600 dark:text-neutral-400"}`}>
-                        {role}
+                        {role === "none" ? "Viewer" : role.charAt(0).toUpperCase() + role.slice(1)}
                       </span>
                     </div>
                     {selectedRole === role && <CheckCircle className="w-4 h-4 text-neutral-900 dark:text-white" />}
@@ -335,45 +352,43 @@ const Teams = () => {
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-4">
                         <div className="w-10 h-10 rounded-full bg-neutral-200 dark:bg-neutral-800 flex items-center justify-center text-sm font-bold text-neutral-700 dark:text-neutral-300 border border-neutral-300 dark:border-neutral-700">
-                          {member.avatar}
+                          {member.user?.username?.slice(0, 2).toUpperCase() || (member.id || "?").toString().slice(0, 2).toUpperCase()}
                         </div>
                         <div>
                           <div className="font-medium text-neutral-900 dark:text-white">
-                            {member.name}
+                            {member.user?.username || member.user?.name || `User ${member.id?.toString().slice(-6)}`}
                           </div>
                           <div className="text-sm text-neutral-500">
-                            {member.email}
+                            {member.user?.email || member.id}
                           </div>
                         </div>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="flex items-center gap-2">
-                        {member.role === "Owner" && (
+                        {member.role === "admin" && (
                           <Crown className="w-4 h-4 text-neutral-700 dark:text-neutral-400" />
                         )}
-                        {member.role === "Editor" && (
+                        {member.role === "editor" && (
                           <Video className="w-4 h-4 text-neutral-700 dark:text-neutral-400" />
                         )}
-                        {member.role === "Reviewer" && (
+                        {member.role === "reviewer" && (
                           <User className="w-4 h-4 text-neutral-700 dark:text-neutral-400" />
                         )}
+                        {member.role === "none" && (
+                          <Shield className="w-4 h-4 text-neutral-700 dark:text-neutral-400" />
+                        )}
                         <span className="text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                          {member.role}
+                          {member.role === "none" ? "Viewer" : member.role?.charAt(0).toUpperCase() + member.role?.slice(1)}
                         </span>
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div
-                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border ${member.status === "Active" ? "bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100" : "bg-transparent border-neutral-300 dark:border-neutral-700 text-neutral-500"}`}
+                        className={`inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium border bg-neutral-100 dark:bg-neutral-900 border-neutral-200 dark:border-neutral-700 text-neutral-900 dark:text-neutral-100`}
                       >
-                        {member.status === "Active" && (
-                          <CheckCircle className="w-3 h-3 mr-1.5" />
-                        )}
-                        {member.status === "Invited" && (
-                          <Clock className="w-3 h-3 mr-1.5" />
-                        )}
-                        {member.status}
+                        <CheckCircle className="w-3 h-3 mr-1.5" />
+                        Active
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">

@@ -1,36 +1,50 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useOutletContext } from "react-router-dom";
 import { Folder, Plus, X, LayoutTemplate, MoreHorizontal, Clock } from "lucide-react";
 import { toast } from "react-toastify";
 
 const Projects = () => {
-  // Pull navigate and setActiveProject from the Dashboard Outlet Context
-  const { projects, navigate, setActiveProject } = useOutletContext();
-  
+  const {
+    projects,
+    navigate,
+    setActiveProject,
+    handleCreateProject,
+  } = useOutletContext();
+
   const [localProjects, setLocalProjects] = useState(projects || []);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [projectName, setProjectName] = useState("");
   const [projectDescription, setProjectDescription] = useState("");
 
-  const handleCreateProject = () => {
+  useEffect(() => {
+    setLocalProjects(projects || []);
+  }, [projects]);
+
+  const handleCreateProjectLocal = async () => {
     if (!projectName.trim()) {
       toast.error("Please enter a project name.");
       return;
     }
-    
-    const newProject = {
-      id: Date.now(),
-      name: projectName,
+
+    const payload = {
+      title: projectName,
       description: projectDescription || "No description provided.",
-      videoCount: 0,
-      updatedAt: "Just now",
     };
-    
-    setLocalProjects([newProject, ...localProjects]);
-    toast.success(`"${projectName}" created successfully!`);
+
+    const response = await handleCreateProject?.(payload);
+    if (!response?.success) {
+      return;
+    }
+
+    const created = response.project || response;
     setProjectName("");
     setProjectDescription("");
     setIsCreateModalOpen(false);
+
+    if (setActiveProject && created) {
+      setActiveProject({ ...created, id: created._id });
+    }
+    navigate("/");
   };
 
   // --- NEW: Handle opening a project ---
@@ -105,7 +119,7 @@ const Projects = () => {
                 Cancel
               </button>
               <button
-                onClick={handleCreateProject}
+                onClick={handleCreateProjectLocal}
                 className="flex-1 py-3 px-4 rounded-xl bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 font-medium hover:opacity-90 transition-opacity shadow-sm"
               >
                 Create Project
@@ -161,25 +175,25 @@ const Projects = () => {
                   <div className="w-12 h-12 bg-neutral-100 dark:bg-neutral-900 rounded-2xl flex items-center justify-center border border-neutral-200 dark:border-neutral-800 group-hover:scale-105 transition-transform">
                     <Folder className="w-6 h-6 text-neutral-700 dark:text-neutral-300" />
                   </div>
-                  <button 
-                    onClick={(e) => e.stopPropagation()} // Prevent card click when clicking options
+                  <button
+                    onClick={(e) => e.stopPropagation()}
                     className="text-neutral-400 hover:text-neutral-900 dark:hover:text-white transition-colors p-1"
                   >
                     <MoreHorizontal className="w-5 h-5" />
                   </button>
                 </div>
                 <h3 className="text-xl font-medium text-neutral-900 dark:text-white mb-1 truncate">
-                  {project.name}
+                  {project.title}
                 </h3>
                 <p className="text-sm text-neutral-500 line-clamp-2 mb-6 min-h-[2.5rem]">
                   {project.description}
                 </p>
                 <div className="flex items-center justify-between pt-4 border-t border-neutral-100 dark:border-neutral-800/50">
                   <span className="text-xs font-medium text-neutral-500 bg-neutral-100 dark:bg-neutral-900 px-2.5 py-1 rounded-md">
-                    {project.videoCount || 0} Videos
+                    {project.status || "raw"}
                   </span>
                   <div className="flex items-center gap-1.5 text-xs text-neutral-400">
-                    <Clock className="w-3.5 h-3.5" /> {project.updatedAt}
+                    <Clock className="w-3.5 h-3.5" /> {project.updatedAt ? new Date(project.updatedAt).toLocaleDateString() : "New"}
                   </div>
                 </div>
               </div>
