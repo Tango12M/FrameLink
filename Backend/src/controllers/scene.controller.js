@@ -8,22 +8,34 @@ export const createScene = async (req, res) => {
     const file = req.file;
 
     if (!projectId) {
-      return res.status(400).json({ error: "projectId required" });
+      return res.status(400).json({
+        success: false,
+        message: "projectId required",
+      });
     }
     if (!file) {
-      return res.status(400).json({ error: "Video file required" });
+      return res.status(400).json({
+        success: false,
+        message: "Video file required",
+      });
     }
 
     const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
     }
 
     const isAdmin = project.members.some(
       (m) => m.user.toString() === req.user.id && m.role === "admin",
     );
     if (!isAdmin) {
-      return res.status(403).json({ error: "Admin only action" });
+      return res.status(403).json({
+        success: false,
+        message: "Admin only action",
+      });
     }
 
     let uploadedFile;
@@ -35,7 +47,8 @@ export const createScene = async (req, res) => {
       });
     } catch (uploadError) {
       return res.status(500).json({
-        error: "Video upload failed",
+        success: false,
+        message: "Video upload failed",
       });
     }
 
@@ -46,9 +59,16 @@ export const createScene = async (req, res) => {
       uploadedBy: req.user.id,
     });
 
-    res.status(201).json(scene);
+    res.status(201).json({
+      success: true,
+      message: "Scene created successfully",
+      scene,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -63,12 +83,22 @@ export const getScenesByProject = async (req, res) => {
     );
 
     if (!isMember) {
-      return res.status(403).json({ error: "Not authorized" });
+      return res.status(403).json({
+        success: false,
+        message: "Not authorized",
+      });
     }
 
     const scenes = await Scene.find({ projectId }).sort({ createdAt: 1 });
-    res.json(scenes);
+    res.json({
+      success: true,
+      message: "Scenes retrieved successfully",
+      scenes,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

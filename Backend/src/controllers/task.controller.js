@@ -7,7 +7,10 @@ export const createTaskFromComment = async (req, res) => {
 
     const comment = await Comment.findById(commentId);
     if (!comment) {
-      return res.status(404).json({ error: "Comment not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Comment not found",
+      });
     }
 
     const task = await Task.create({
@@ -22,9 +25,16 @@ export const createTaskFromComment = async (req, res) => {
     comment.linkedTaskId = task._id;
     await comment.save();
 
-    res.status(201).json(task);
+    res.status(201).json({
+      success: true,
+      message: "Task created successfully",
+      task,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -38,9 +48,16 @@ export const updateTaskStatus = async (req, res) => {
       { new: true },
     );
 
-    res.json(task);
+    res.json({
+      success: true,
+      message: "Task status updated successfully",
+      task,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -49,8 +66,15 @@ export const getTasksByScene = async (req, res) => {
     const { sceneId } = req.params;
 
     const tasks = await Task.find({ sceneId }).sort({ createdAt: -1 });
-    res.json(tasks);
+    res.json({
+      success: true,
+      message: "Tasks retrieved successfully",
+      tasks,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

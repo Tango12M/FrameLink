@@ -10,7 +10,10 @@ export const createInviteLink = async (req, res) => {
 
     const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
     }
 
     const isAdmin = project.members.some(
@@ -19,7 +22,10 @@ export const createInviteLink = async (req, res) => {
         m.role === "admin"
     );
     if (!isAdmin) {
-      return res.status(403).json({ error: "Only admin can invite" });
+      return res.status(403).json({
+        success: false,
+        message: "Only admin can invite",
+      });
     }
 
     const token = crypto.randomBytes(20).toString("hex");
@@ -33,9 +39,17 @@ export const createInviteLink = async (req, res) => {
 
     const link = `${config.FRONTEND_URL}/invite/${token}`;
 
-    res.json({ link, expiresIn: "24 hours" });
+    res.json({
+      success: true,
+      message: "Invite link created successfully",
+      link,
+      expiresIn: "24 hours",
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -47,21 +61,33 @@ export const acceptInvite = async (req, res) => {
     const invite = await Invite.findOne({ token });
 
     if (!invite) {
-      return res.status(404).json({ error: "Invalid invite" });
+      return res.status(404).json({
+        success: false,
+        message: "Invalid invite",
+      });
     }
 
     if (invite.status === "accepted") {
-      return res.status(400).json({ error: "Already used" });
+      return res.status(400).json({
+        success: false,
+        message: "Already used",
+      });
     }
 
     if (invite.expiresAt < new Date()) {
-      return res.status(400).json({ error: "Invite expired" });
+      return res.status(400).json({
+        success: false,
+        message: "Invite expired",
+      });
     }
 
     const project = await Project.findById(invite.projectId);
 
     if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
     }
 
     const alreadyMember = project.members.some(
@@ -69,7 +95,10 @@ export const acceptInvite = async (req, res) => {
     );
 
     if (alreadyMember) {
-      return res.json({ message: "Already a member" });
+      return res.json({
+        success: true,
+        message: "Already a member",
+      });
     }
 
     project.members.push({
@@ -82,9 +111,15 @@ export const acceptInvite = async (req, res) => {
     invite.status = "accepted";
     await invite.save();
 
-    res.json({ message: "Joined project successfully" });
+    res.json({
+      success: true,
+      message: "Joined project successfully",
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -95,14 +130,22 @@ export const getInviteDetails = async (req, res) => {
     const invite = await Invite.findOne({ token }).populate("projectId");
 
     if (!invite) {
-      return res.status(404).json({ error: "Invalid invite" });
+      return res.status(404).json({
+        success: false,
+        message: "Invalid invite",
+      });
     }
 
     res.json({
+      success: true,
+      message: "Invite details retrieved successfully",
       projectName: invite.projectId.title,
       status: invite.status,
     });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
