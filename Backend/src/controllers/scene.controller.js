@@ -104,11 +104,10 @@ export const getScenesByProject = async (req, res) => {
       .sort({ createdAt: 1 });
 
     if (!isAdmin) {
-      scenes = scenes.filter(
-        (scene) =>
-          !scene.assignedTo ||
-          scene.assignedTo.toString() === req.user.id,
-      );
+      scenes = scenes.filter((scene) => {
+        const assignedToId = scene.assignedTo?._id?.toString() || scene.assignedTo?.toString();
+        return !assignedToId || assignedToId === req.user.id;
+      });
     }
 
     res.json({
@@ -160,7 +159,8 @@ export const getSceneById = async (req, res) => {
       (m) => m.user.toString() === req.user.id && m.role === "admin",
     );
 
-    if (!isAdmin && scene.assignedTo && scene.assignedTo.toString() !== req.user.id) {
+    const assignedToId = scene.assignedTo?._id?.toString() || scene.assignedTo?.toString();
+    if (!isAdmin && assignedToId && assignedToId !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: "You do not have access to this scene",
@@ -285,7 +285,8 @@ export const updateSceneVideo = async (req, res) => {
     const isAdmin = project.members.some(
       (m) => m.user.toString() === req.user.id && m.role === "admin",
     );
-    if (!isAdmin && scene.assignedTo && scene.assignedTo.toString() !== req.user.id) {
+    const assignedToId = scene.assignedTo?._id?.toString() || scene.assignedTo?.toString();
+    if (!isAdmin && assignedToId && assignedToId !== req.user.id) {
       return res.status(403).json({
         success: false,
         message: "You do not have permission to update this video",

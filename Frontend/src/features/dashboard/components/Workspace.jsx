@@ -73,13 +73,14 @@ const Workspace = () => {
   });
   const [isAssigning, setIsAssigning] = useState(false);
 
-  const handleCardContextMenu = (e, task) => {
+  const handleOpenAssignMenu = (e, task) => {
     if (!isAdmin) return;
-    e.preventDefault();
+    e.stopPropagation();
+    const rect = e.currentTarget.getBoundingClientRect();
     setContextMenu({
       visible: true,
-      x: e.clientX,
-      y: e.clientY,
+      x: rect.right + 8,
+      y: rect.top,
       task,
     });
   };
@@ -249,7 +250,6 @@ const Workspace = () => {
                           key={task.id}
                           draggable={isAdmin} // Enable Dragging
                           onDragStart={(e) => handleDragStart(e, task.id)} // Add Drag Handler
-                          onContextMenu={(e) => handleCardContextMenu(e, task)}
                           onClick={() => onOpenVideo(task)}
                           className={`bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors shadow-sm group relative overflow-hidden ${
                             isAdmin ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
@@ -262,7 +262,7 @@ const Workspace = () => {
                             }}
                           />
                           <div className="relative z-10">
-                            <div className="flex items-start justify-between mb-3">
+                            <div className="flex items-start justify-between mb-3 gap-3">
                               <div className="px-2 py-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
                                 {statusLabel[task.status] || "Scene"}
                               </div>
@@ -277,7 +277,13 @@ const Workspace = () => {
                                   </span>
                                 )}
                                 {isAdmin && (
-                                  <GripHorizontal className="w-4 h-4 text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 transition-colors" />
+                                  <button
+                                    type="button"
+                                    onClick={(e) => handleOpenAssignMenu(e, task)}
+                                    className="inline-flex items-center justify-center rounded-full border border-neutral-200 dark:border-neutral-800 bg-neutral-100 dark:bg-neutral-900 p-2 text-neutral-500 dark:text-neutral-300 hover:bg-neutral-200 dark:hover:bg-neutral-800 transition"
+                                  >
+                                    <Users className="w-4 h-4" />
+                                  </button>
                                 )}
                               </div>
                             </div>
@@ -310,35 +316,59 @@ const Workspace = () => {
               style={{ top: contextMenu.y, left: contextMenu.x }}
             >
               <div className="px-4 py-4 border-b border-neutral-200 dark:border-neutral-800">
-                <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                  Assign scene to editor
-                </p>
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm font-semibold text-neutral-900 dark:text-white">
+                      Assign Editors
+                    </p>
+                    <p className="text-xs text-neutral-500 dark:text-neutral-400">
+                      Choose an editor for this scene.
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={closeContextMenu}
+                    className="text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-200"
+                  >
+                    ✕
+                  </button>
+                </div>
               </div>
               <div className="max-h-72 overflow-y-auto">
-                {activeProject.members
-                  .filter((member) => member.role === "editor")
-                  .map((member) => {
-                    const memberId = member.user?._id || member.user;
-                    return (
-                      <button
-                        key={memberId}
-                        onClick={(event) => {
-                          event.stopPropagation();
-                          handleAssignScene(contextMenu.task.id, memberId);
-                        }}
-                        className="w-full text-left px-4 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
-                      >
-                        <div className="flex items-center justify-between gap-3">
-                          <span className="text-sm text-neutral-900 dark:text-white">
-                            {member.user?.username || member.user?.email || "Unknown"}
-                          </span>
-                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
-                            {member.role}
-                          </span>
-                        </div>
-                      </button>
-                    );
-                  })}
+                {activeProject?.members?.filter((member) => member.role === "editor").length > 0 ? (
+                  activeProject.members
+                    .filter((member) => member.role === "editor")
+                    .map((member) => {
+                      const memberId = member.user?._id || member.user;
+                      const assignedToId = contextMenu.task?.assignedTo?._id || contextMenu.task?.assignedTo;
+                      const isAssigned = assignedToId === memberId;
+                      return (
+                        <button
+                          key={memberId}
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleAssignScene(contextMenu.task.id, memberId);
+                          }}
+                          className={`w-full text-left px-4 py-3 transition-colors ${
+                            isAssigned ? "bg-blue-50 dark:bg-blue-950/30" : "hover:bg-neutral-100 dark:hover:bg-neutral-900"
+                          }`}
+                        >
+                          <div className="flex items-center justify-between gap-3">
+                            <span className="text-sm text-neutral-900 dark:text-white">
+                              {member.user?.username || member.user?.email || "Unknown"}
+                            </span>
+                            <span className="text-xs font-semibold text-blue-700 dark:text-blue-300">
+                              Editor
+                            </span>
+                          </div>
+                        </button>
+                      );
+                    })
+                ) : (
+                  <div className="px-4 py-4 text-sm text-neutral-500 dark:text-neutral-400">
+                    No editors found in this project.
+                  </div>
+                )}
                 <button
                   onClick={(event) => {
                     event.stopPropagation();
