@@ -1,11 +1,11 @@
-import axios from "axios";
 import config from "../config/config.js";
+import axios from "axios";
 
 export async function sendEmail({ to, subject, html }) {
   const response = await axios.post(
-    "https://api.brevo.com/v3/smtp/email",
+    config.BREVO_API_URL,
     {
-      sender: { name: "Memora", email: config.BREVO_SENDER_EMAIL },
+      sender: { name: "FrameLink", email: config.BREVO_SENDER_EMAIL },
       to: [{ email: to }],
       subject,
       htmlContent: html,

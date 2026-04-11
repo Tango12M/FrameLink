@@ -1,13 +1,14 @@
+import config from "../config/config.js";
 import jwt from "jsonwebtoken";
 
-// Models 
+// Models
 import userModel from "../models/user.model.js";
 
 // Utils
-import { emailHTML, verifyEmailHTML } from "../utils/util.js";
+import { emailHTML, generateVerificationCode } from "../utils/util.js";
 import {
   cookieOptions,
-  verificationExpirationTime,
+  createVerificationExpirationTime,
 } from "../utils/constants.js";
 
 // Services
@@ -26,26 +27,20 @@ export async function register(req, res) {
     });
   }
 
+  const verificationCode = generateVerificationCode(4);
   const user = await userModel.create({
     username,
     email,
     password,
-    verificationExpiresAt: verificationExpirationTime,
+    verificationCode,
+    verificationExpiresAt: createVerificationExpirationTime(),
   });
-
-  const emailVerificationToken = jwt.sign(
-    {
-      email: user.email,
-    },
-    process.env.JWT_SECRET,
-    { expiresIn: "15m" },
-  );
 
   try {
     await sendEmail({
       to: email,
       subject: "Welcome to Memora!",
-      html: emailHTML(username, emailVerificationToken),
+      html: emailHTML(username, verificationCode),
     });
   } catch (err) {
     // User created but email failed, delete the user so they can try again
@@ -68,9 +63,9 @@ export async function register(req, res) {
 }
 
 export async function login(req, res) {
-  const { username, password } = req.body;
+  const { email, password } = req.body;
 
-  const user = await userModel.findOne({ username });
+  const user = await userModel.findOne({ email });
   if (!user) {
     return res.status(400).json({
       success: false,
@@ -96,9 +91,9 @@ export async function login(req, res) {
   const token = jwt.sign(
     {
       id: user._id,
-      username: user.username,
+      email: user.email,
     },
-    process.env.JWT_SECRET,
+    config.JWT_SECRET,
     { expiresIn: "7d" },
   );
 
@@ -125,12 +120,6 @@ export async function logout(req, res) {
 export async function deleteUser(req, res) {
   try {
     const userId = req.user.id;
-
-    await highlightSaveModel.deleteMany({ userId });
-    await highlightModel.deleteMany({ userId });
-    await collectionSavesModel.deleteMany({ userId });
-    await collectionModel.deleteMany({ userId });
-    await saveModel.deleteMany({ userId });
 
     await userModel.findByIdAndDelete(userId);
 
@@ -168,41 +157,108 @@ export async function getMe(req, res) {
 
 export async function verifyEmail(req, res) {
   const { token } = req.query;
+  const { email, code } = req.body;
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    if (token) {
+      const decoded = jwt.verify(token, config.JWT_SECRET);
+      const user = await userModel.findOne({ email: decoded.email });
+      if (!user) {
+        return res.status(400).json({
+          message: "Invalid token",
+          success: false,
+          err: "User not found",
+        });
+      }
 
-    const user = await userModel.findOne({ email: decoded.email });
-    if (!user) {
-      return res.status(400).json({
-        message: "Invalid token",
-        success: false,
-        err: "User not found",
-      });
-    }
-
-    if (user.verificationExpiresAt < new Date()) {
-      return res.status(400).send(`
+      if (
+        !user.verificationExpiresAt ||
+        user.verificationExpiresAt < new Date()
+      ) {
+        return res.status(400).send(`
       <h1>Link Expired</h1>
       <p>Your verification link expired. Please register again.</p>
     `);
+      }
+
+      user.verified = true;
+      user.verificationCode = null;
+      user.verificationExpiresAt = null;
+      await user.save();
+
+      const authToken = jwt.sign(
+        { id: user._id, username: user.username },
+        config.JWT_SECRET,
+        { expiresIn: "7d" },
+      );
+
+      res.cookie("token", authToken, cookieOptions);
+      return res.redirect(process.env.FRONTEND_URL || "/");
+    }
+
+    if (!email || !code) {
+      return res.status(400).json({
+        success: false,
+        message: "Email and verification code are required",
+      });
+    }
+
+    const user = await userModel.findOne({ email });
+    if (!user) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification details",
+      });
+    }
+
+    if (user.verified) {
+      return res.status(400).json({
+        success: false,
+        message: "Email is already verified",
+      });
+    }
+
+    if (
+      !user.verificationExpiresAt ||
+      user.verificationExpiresAt < new Date()
+    ) {
+      return res.status(400).json({
+        success: false,
+        message: "Verification code expired. Please request a new one.",
+      });
+    }
+
+    if (user.verificationCode !== code) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid verification code",
+      });
     }
 
     user.verified = true;
+    user.verificationCode = null;
     user.verificationExpiresAt = null;
     await user.save();
 
     const authToken = jwt.sign(
       { id: user._id, username: user.username },
-      process.env.JWT_SECRET,
+      config.JWT_SECRET,
       { expiresIn: "7d" },
     );
 
     res.cookie("token", authToken, cookieOptions);
-    return res.redirect(process.env.FRONTEND_URL || "/");
+    return res.status(200).json({
+      success: true,
+      message: "Email verified successfully",
+      user: {
+        id: user._id,
+        username: user.username,
+        email: user.email,
+      },
+    });
   } catch (err) {
     return res.status(400).json({
-      message: "Invalid or expired token",
+      message: "Invalid or expired verification",
       success: false,
       err: err.message,
     });
@@ -228,33 +284,27 @@ export async function resendVerificationEmail(req, res) {
       });
     }
 
-    user.verificationExpiresAt = verificationExpirationTime;
+    const verificationCode = generateVerificationCode(4);
+    user.verificationCode = verificationCode;
+    user.verificationExpiresAt = createVerificationExpirationTime();
     await user.save();
-
-    const emailVerificationToken = jwt.sign(
-      {
-        email: user.email,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "15m" },
-    );
 
     try {
       await sendEmail({
         to: user.email,
         subject: "Memora - Email Verification",
-        html: emailHTML(user.username, emailVerificationToken),
+        html: emailHTML(user.username, verificationCode),
       });
     } catch (err) {
       return res.status(500).json({
         success: false,
-        message: "Failed to send verification email. Please try again.",
+        message: "Failed to resend verification email",
       });
     }
 
     res.status(200).json({
       success: true,
-      message: "Verification email resent successfully",
+      message: "Verification code resent successfully",
     });
   } catch (error) {
     res.status(500).json({

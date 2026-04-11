@@ -20,8 +20,16 @@ if (!process.env.BREVO_API_KEY) {
   throw new Error("BREVO_API_KEY is not defined in environment variables");
 }
 
+if (!process.env.BREVO_API_URL) {
+  throw new Error("BREVO_API_URL is not defined in environment variables");
+}
+
 if (!process.env.MISTRAL_API_KEY) {
   throw new Error("MISTRAL_API_KEY is not defined in environment variables");
+}
+
+if (!process.env.JWT_SECRET) {
+  throw new Error("JWT_SECRET is not defined in environment variables");
 }
 
 const config = {
@@ -30,7 +38,9 @@ const config = {
   FRONTEND_URL: process.env.FRONTEND_URL,
   BREVO_SENDER_EMAIL: process.env.BREVO_SENDER_EMAIL,
   BREVO_API_KEY: process.env.BREVO_API_KEY,
+  BREVO_API_URL: process.env.BREVO_API_URL,
   MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
+  JWT_SECRET: process.env.JWT_SECRET,
 };
 
 export default config;

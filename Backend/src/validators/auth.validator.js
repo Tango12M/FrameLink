@@ -30,15 +30,13 @@ export const registerValidator = [
 ];
 
 export const loginValidator = [
-  body("username")
+  body("email")
     .trim()
     .toLowerCase()
     .notEmpty()
-    .withMessage("Username is required")
-    .isLength({ min: 3, max: 30 })
-    .withMessage("Username must be between 3 and 30 characters")
-    .matches(/^[a-zA-Z0-9_]+$/)
-    .withMessage("Username can only contain letters, numbers and underscores"),
+    .withMessage("Email is required")
+    .isEmail()
+    .withMessage("please provide a valid email"),
 
   body("password").notEmpty().withMessage("Password is required"),
 
@@ -47,5 +45,19 @@ export const loginValidator = [
 
 export const resendVerificationValidator = [
   body("email").isEmail().withMessage("Valid email required"),
+
+  validate,
+];
+
+export const verifyEmailValidator = [
+  body("email").isEmail().withMessage("Valid email required"),
+
+  body("code")
+    .trim()
+    .isLength({ min: 4, max: 4 })
+    .withMessage("Verification code must be 4 digits")
+    .isNumeric()
+    .withMessage("Verification code must contain only numbers"),
+    
   validate,
 ];
