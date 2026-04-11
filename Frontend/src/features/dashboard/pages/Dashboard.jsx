@@ -32,6 +32,7 @@ const Dashboard = ({ toggleNotif }) => {
     loading,
     projects,
     tasks,
+    setTasks
   } = useDashboard();
   const { handleLogout } = useAuth();
 

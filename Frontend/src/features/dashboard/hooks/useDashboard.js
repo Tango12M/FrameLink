@@ -104,5 +104,6 @@ export const useDashboard = () => {
     loading,
     projects,
     tasks,
+    setTasks
   };
 };

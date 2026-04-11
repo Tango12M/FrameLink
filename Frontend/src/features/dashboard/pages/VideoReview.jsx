@@ -322,7 +322,6 @@ const VideoReview = () => {
             </div>
 
           </div>
-        </div>
 
         {/* Right Side: Comments */}
         <div className="w-full lg:w-[400px] bg-white dark:bg-[#111] border-l border-neutral-200 dark:border-neutral-800 flex flex-col h-full shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-10">
