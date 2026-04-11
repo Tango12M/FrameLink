@@ -6,6 +6,7 @@ export const AuthContext = createContext();
 export const AuthProvider = ({ children }) => {
   const [actionLoading, setActionLoading] = useState(false);
   const [authLoading, setAuthLoading] = useState(true);
+  const [actionType, setActionType] = useState(null);
   const [user, setUser] = useState(null);
 
   useEffect(() => {
@@ -28,6 +29,8 @@ export const AuthProvider = ({ children }) => {
       value={{
         actionLoading,
         setActionLoading,
+        actionType,
+        setActionType,
         authLoading,
         user,
         setUser,

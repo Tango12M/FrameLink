@@ -8,6 +8,8 @@ const EmailVerifyModal = ({
   handleVerifyEmail,
   handleResendVerification,
   actionLoading,
+  navigate,
+  actionType,
 }) => {
   const [code, setCode] = useState(["", "", "", ""]);
   const inputRefs = useRef([]);
@@ -38,13 +40,19 @@ const EmailVerifyModal = ({
       return;
     }
 
-    await handleVerifyEmail({ email, code: fullCode });
+    const result = await handleVerifyEmail({ email, code: fullCode });
+    if (result?.success) {
+      setShowVerifyModal(true);
+      navigate("/setup");
+    }
   };
 
   const handleResend = async () => {
-    await handleResendVerification({ email });
-    setCode(["", "", "", ""]);
-    inputRefs.current[0]?.focus();
+    const result = await handleResendVerification({ email });
+    if (result?.success) {
+      setCode(["", "", "", ""]);
+      inputRefs.current[0]?.focus();
+    }
   };
 
   return (
@@ -100,9 +108,12 @@ const EmailVerifyModal = ({
               type="submit"
               disabled={actionLoading || code.join("").length !== 4}
               className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg flex items-center justify-center gap-2 disabled:bg-neutral-400 dark:disabled:bg-neutral-400 disabled:cursor-not-allowed"
-            >
-              {actionLoading ? "Verifying..." : "Verify & Continue"}{" "}
-              {!actionLoading && <ArrowRight className="w-4 h-4" />}
+            > 
+              {actionLoading && actionType === "resend"
+                ? "Resending..."
+                : actionLoading
+                  ? "Verifying..."
+                  : "Verify & Continue"}
             </button>
           </MagneticButton>
 

@@ -2,12 +2,12 @@ import { createBrowserRouter } from "react-router-dom";
 
 // Pages
 import Dashboard from "../features/dashboard/pages/Dashboard";
-import TeamSetup from "../features/auth/pages/TeamSetup"; 
+import TeamSetup from "../features/auth/pages/TeamSetup";
 import Auth from "../features/auth/pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import ErrorPage from "./pages/ErrorPage";
 
-// Components 
+// Components
 import WorkspaceSettings from "../features/dashboard/components/WorkspaceSettings";
 import Workspace from "../features/dashboard/components/Workspace";
 import Projects from "../features/dashboard/components/Projects";
@@ -60,9 +60,13 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
           <Auth />
         </Guest>
       ),
-    }, 
+    },
     {
       path: "/setup",
-      element: <TeamSetup />,
+      element: (
+        <Protected>
+          <TeamSetup />
+        </Protected>
+      ),
     },
   ]);

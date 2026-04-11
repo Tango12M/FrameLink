@@ -13,7 +13,8 @@ import { toast } from "react-toastify";
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  const { actionLoading, authLoading, setActionLoading, user, setUser } =
+  const { actionLoading, authLoading, actionType,
+    setActionType,setActionLoading, user, setUser } =
     context;
 
   async function handleRegister({ email, username, password }) {
@@ -104,14 +105,17 @@ export const useAuth = () => {
 
   async function handleResendVerification({ email }) {
     setActionLoading(true);
+    setActionType("resend");
     try {
       const data = await resendVerificationEmail({ email });
       toast.success(data.message);
       return data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
+      setActionType(null);
     } finally {
       setActionLoading(false);
+      setActionType(null);
     }
   }
 
@@ -119,6 +123,7 @@ export const useAuth = () => {
     actionLoading,
     authLoading,
     user,
+    actionType,
     handleRegister,
     handleLogin,
     handleLogout,

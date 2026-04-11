@@ -26,6 +26,7 @@ const Auth = () => {
     handleLogin,
     handleVerifyEmail,
     handleResendVerification,
+    actionType,
   } = useAuth();
 
   const [isLogin, setIsLogin] = useState(false);
@@ -64,7 +65,6 @@ const Auth = () => {
     });
     if (result?.success) {
       setShowVerifyModal(true);
-      navigate("/setup");
     }
   };
 
@@ -75,7 +75,6 @@ const Auth = () => {
       password: formData.password,
     });
     if (result?.success) {
-      alert("Hom")
       navigate("/setup");
     }
   };
@@ -93,6 +92,8 @@ const Auth = () => {
           handleVerifyEmail={handleVerifyEmail}
           handleResendVerification={handleResendVerification}
           actionLoading={actionLoading}
+          navigate={navigate}
+          actionType={actionType}
         />
       )}
 
