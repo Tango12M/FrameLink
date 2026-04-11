@@ -36,7 +36,7 @@ const TeamSetup = () => {
     // Simulate successful join
     setIsJoinModalOpen(false);
     toast.success("Successfully joined the workspace!");
-    navigate("/team");
+    navigate("/projects");
   };
 
   return (
