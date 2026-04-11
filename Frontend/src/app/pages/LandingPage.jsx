@@ -174,10 +174,6 @@ const LandingPage = () => {
       </div>
 
       <header className="relative max-w-5xl mx-auto px-6 pt-40 md:pt-48 pb-10 flex flex-col items-center text-center">
-        <div className="reveal inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 text-xs md:text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-8 shadow-sm">
-          <Sparkles className="w-4 h-4 animate-pulse" />
-          <span>FrameLink AI 2.0 is now live</span>
-        </div>
         <h1 className="reveal reveal-delay-1 text-5xl sm:text-6xl md:text-8xl font-medium tracking-tighter mb-6 md:mb-8 text-neutral-900 dark:text-white transition-colors duration-500 h-auto">
           Ship better videos, <br className="hidden md:block" />
           <span

@@ -64,6 +64,7 @@ const Auth = () => {
     });
     if (result?.success) {
       setShowVerifyModal(true);
+      navigate("/setup");
     }
   };
 
@@ -74,6 +75,7 @@ const Auth = () => {
       password: formData.password,
     });
     if (result?.success) {
+      alert("Hom")
       navigate("/setup");
     }
   };

@@ -1,25 +1,30 @@
 import { useState } from "react";
 import { Users, Plus, ArrowRight, Layout, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 import { toast } from "react-toastify";
 
 const TeamSetup = () => {
+  const { handleLogout } = useAuth();
   const navigate = useNavigate();
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
-  
+
   // State for Modals
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isJoinModalOpen, setIsJoinModalOpen] = useState(false);
-  
+
   // State for the invite input
   const [inviteCode, setInviteCode] = useState("");
 
   const handleGlobalMouseMove = (e) =>
     setMousePos({ x: e.clientX, y: e.clientY });
 
-  const handleConfirmLogout = () => {
+  const handleConfirmLogout = async () => {
     setIsLogoutModalOpen(false);
-    navigate("/landing");
+    const result = await handleLogout();
+    if (result?.success) {
+      navigate("/landing");
+    }
   };
 
   const handleJoinTeam = () => {
@@ -27,7 +32,7 @@ const TeamSetup = () => {
       toast.error("Please enter a valid invite code or link.");
       return;
     }
-    
+
     // Simulate successful join
     setIsJoinModalOpen(false);
     toast.success("Successfully joined the workspace!");
@@ -97,9 +102,10 @@ const TeamSetup = () => {
               Join a Workspace
             </h3>
             <p className="text-neutral-500 text-sm font-light mb-8 text-center leading-relaxed">
-              Paste the invite link or code provided by your team administrator to gain access.
+              Paste the invite link or code provided by your team administrator
+              to gain access.
             </p>
-            
+
             <div className="relative group mb-8">
               <input
                 type="text"
@@ -138,12 +144,13 @@ const TeamSetup = () => {
           </div>
           <span className="text-xl font-bold tracking-tighter">FrameLink</span>
         </div>
-        
+
         <button
           onClick={() => setIsLogoutModalOpen(true)}
           className="text-sm font-medium text-neutral-500 hover:text-red-500 dark:hover:text-red-400 transition-colors flex items-center gap-2 group"
         >
-          Sign Out <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
+          Sign Out{" "}
+          <LogOut className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />
         </button>
       </header>
 

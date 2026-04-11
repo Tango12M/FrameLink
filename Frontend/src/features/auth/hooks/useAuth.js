@@ -52,6 +52,7 @@ export const useAuth = () => {
     try {
       const data = await logoutUser();
       setUser(null);
+      sessionStorage.removeItem("pendingEmail");
       return data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
