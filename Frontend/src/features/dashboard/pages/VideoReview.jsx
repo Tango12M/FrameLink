@@ -280,93 +280,94 @@ const VideoReview = () => {
       )}
 
       <div className="flex-1 p-6 flex flex-col items-center bg-neutral-100 dark:bg-[#0a0a0a] overflow-y-auto">
-        <div className="w-full max-w-5xl flex flex-col gap-6">
-          {/* Video Player Card */}
-          <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-black border border-neutral-200 dark:border-neutral-800 relative group">
-            <video
-              ref={videoRef}
-              controls
-              onTimeUpdate={(e) => setCurrentVideoTime(e.target.currentTime)}
-              className="w-full aspect-video outline-none"
-              src={
-                scene?.videoUrl
-                  ? scene.videoUrl
-                  : "https://www.w3schools.com/html/mov_bbb.mp4"
-              }
-            />
-          </div>
-
-          {/* Video Details Card */}
-          <div className="bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm">
-            <div className="flex items-start justify-between mb-4">
-              <div>
-                <div className="flex items-center gap-3 mb-2">
-                  <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-md">
-                    {statusLabel[scene?.status] || "Raw Footage"}
-                  </span>
-                  <span className="text-sm text-neutral-500 font-medium">
-                    ID: {id || "1775935"}
-                  </span>
-                </div>
-                <h1 className="text-2xl md:text-3xl font-medium text-neutral-900 dark:text-white tracking-tight">
-                  {scene?.title || "Review Footage"}
-                </h1>
-              </div>
+        <div className="w-full max-w-7xl flex flex-col lg:flex-row gap-6">
+          <div className="flex-1 flex flex-col gap-6">
+            {/* Video Player Card */}
+            <div className="w-full rounded-3xl overflow-hidden shadow-2xl bg-black border border-neutral-200 dark:border-neutral-800 relative group">
+              <video
+                ref={videoRef}
+                controls
+                onTimeUpdate={(e) => setCurrentVideoTime(e.target.currentTime)}
+                className="w-full aspect-video outline-none"
+                src={
+                  scene?.videoUrl
+                    ? scene.videoUrl
+                    : "https://www.w3schools.com/html/mov_bbb.mp4"
+                }
+              />
             </div>
 
-            <div className="h-px w-full bg-neutral-100 dark:bg-neutral-800 my-6"></div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              <div className="md:col-span-2 space-y-3">
-                <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-medium">
-                  <Info className="w-4 h-4 text-neutral-500" /> Project
-                  Description
+            {/* Video Details Card */}
+            <div className="bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 md:p-8 shadow-sm">
+              <div className="flex items-start justify-between mb-4">
+                <div>
+                  <div className="flex items-center gap-3 mb-2">
+                    <span className="px-2.5 py-1 bg-blue-50 dark:bg-blue-900/30 text-blue-600 dark:text-blue-400 text-xs font-bold uppercase tracking-wider rounded-md">
+                      {statusLabel[scene?.status] || "Raw Footage"}
+                    </span>
+                    <span className="text-sm text-neutral-500 font-medium">
+                      ID: {id || "1775935"}
+                    </span>
+                  </div>
+                  <h1 className="text-2xl md:text-3xl font-medium text-neutral-900 dark:text-white tracking-tight">
+                    {scene?.title || "Review Footage"}
+                  </h1>
                 </div>
-                <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
-                  {scene && scene.title
-                    ? 'Review the scene titled "' +
-                      scene.title +
-                      '" and add timecoded comments as needed.'
-                    : "Review the selected footage and leave comments connected to the current scene."}
-                </p>
               </div>
 
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
-                    <User className="w-4 h-4 text-neutral-500" />
+              <div className="h-px w-full bg-neutral-100 dark:bg-neutral-800 my-6"></div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="md:col-span-2 space-y-3">
+                  <div className="flex items-center gap-2 text-neutral-900 dark:text-white font-medium">
+                    <Info className="w-4 h-4 text-neutral-500" /> Project
+                    Description
                   </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 font-medium">
-                      Uploaded By
-                    </p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                      {scene?.uploadedBy ? "Team Member" : "Review Team"}
-                    </p>
-                  </div>
+                  <p className="text-neutral-600 dark:text-neutral-400 text-sm leading-relaxed">
+                    {scene && scene.title
+                      ? 'Review the scene titled "' +
+                        scene.title +
+                        '" and add timecoded comments as needed.'
+                      : "Review the selected footage and leave comments connected to the current scene."}
+                  </p>
                 </div>
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
-                    <Clock className="w-4 h-4 text-neutral-500" />
+
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                      <User className="w-4 h-4 text-neutral-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 font-medium">
+                        Uploaded By
+                      </p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                        {scene?.uploadedBy ? "Team Member" : "Review Team"}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-xs text-neutral-500 font-medium">
-                      Uploaded On
-                    </p>
-                    <p className="text-sm font-medium text-neutral-900 dark:text-white">
-                      {scene?.createdAt
-                        ? new Date(scene.createdAt).toLocaleString()
-                        : "Today, 2:45 PM"}
-                    </p>
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-full bg-neutral-100 dark:bg-neutral-900 flex items-center justify-center border border-neutral-200 dark:border-neutral-800">
+                      <Clock className="w-4 h-4 text-neutral-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-neutral-500 font-medium">
+                        Uploaded On
+                      </p>
+                      <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                        {scene?.createdAt
+                          ? new Date(scene.createdAt).toLocaleString()
+                          : "Today, 2:45 PM"}
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Right Side: Comments */}
-        <div className="w-full lg:w-[400px] bg-white dark:bg-[#111] border-l border-neutral-200 dark:border-neutral-800 flex flex-col h-full shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-10">
+          {/* Right Side: Comments */}
+          <div className="w-full lg:w-[420px] bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 flex flex-col h-full shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-10">
           <div className="p-5 border-b border-neutral-200 dark:border-neutral-800 shrink-0 bg-neutral-50/50 dark:bg-neutral-900/20">
             <h3 className="font-medium text-neutral-900 dark:text-white">
               Timecoded Notes

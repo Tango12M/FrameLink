@@ -312,7 +312,7 @@ const Workspace = () => {
           </div>
           {contextMenu.visible && (
             <div
-              className="fixed z-[200] w-72 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111] shadow-2xl overflow-hidden"
+              className="fixed z-[200] w-72 max-h-[80vh] rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111] shadow-2xl overflow-hidden"
               style={{ top: contextMenu.y, left: contextMenu.x }}
             >
               <div className="px-4 py-4 border-b border-neutral-200 dark:border-neutral-800">
@@ -334,7 +334,7 @@ const Workspace = () => {
                   </button>
                 </div>
               </div>
-              <div className="max-h-72 overflow-y-auto">
+              <div className="max-h-[calc(80vh-6rem)] overflow-y-auto">
                 {activeProject?.members?.filter((member) => member.role === "editor").length > 0 ? (
                   activeProject.members
                     .filter((member) => member.role === "editor")
