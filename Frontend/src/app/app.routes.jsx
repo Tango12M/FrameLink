@@ -6,6 +6,7 @@ import TeamSetup from "../features/auth/pages/TeamSetup";
 import Auth from "../features/auth/pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import ErrorPage from "./pages/ErrorPage";
+import VideoReview from "../features/dashboard/pages/VideoReview"; // <-- NEW IMPORT
 
 // Components
 import WorkspaceSettings from "../features/dashboard/components/WorkspaceSettings";
@@ -46,6 +47,11 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
         {
           path: "profile",
           element: <Profile />,
+        },
+        // --- NEW: Video Review Route ---
+        {
+          path: "video/:id",
+          element: <VideoReview />,
         },
       ],
     },
