@@ -1,0 +1,65 @@
+/* app-gate.css */
+
+.appgate-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  gap: 28px;
+  background: var(--bg-base);
+}
+
+.appgate-loading__logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.5px;
+  color: var(--text-primary);
+}
+
+.appgate-loading__logo span {
+  opacity: 0.35;
+}
+
+.appgate-loading__dots {
+  display: flex;
+  gap: 7px;
+}
+
+.appgate-loading__dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--text-primary);
+  opacity: 0.15;
+  animation: appgate-pulse 1.4s ease-in-out infinite;
+}
+
+.appgate-loading__dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.appgate-loading__dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+.appgate-loading__hint {
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--text-secondary);
+  letter-spacing: 0.01em;
+}
+
+@keyframes appgate-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.15;
+    transform: scale(0.85);
+  }
+  40% {
+    opacity: 0.7;
+    transform: scale(1);
+  }
+}
