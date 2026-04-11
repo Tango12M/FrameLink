@@ -39,7 +39,7 @@ export async function register(req, res) {
   try {
     await sendEmail({
       to: email,
-      subject: "Welcome to Memora!",
+      subject: "Welcome to FrameLink!",
       html: emailHTML(username, verificationCode),
     });
   } catch (err) {
