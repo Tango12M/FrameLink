@@ -5,6 +5,7 @@ import Dashboard from "../features/dashboard/pages/Dashboard";
 import Auth from "../features/auth/pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import ErrorPage from "./pages/ErrorPage";
+import TeamSetup from "../features/auth/pages/TeamSetup"; // <-- We imported the new page here
 
 // Components
 import WorkspaceSettings from "../features/dashboard/components/WorkspaceSettings";
@@ -55,5 +56,10 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
           <Auth />
         </Guest>
       ),
+    },
+    // <-- We added the new route right here
+    {
+      path: "/setup",
+      element: <TeamSetup />,
     },
   ]);
