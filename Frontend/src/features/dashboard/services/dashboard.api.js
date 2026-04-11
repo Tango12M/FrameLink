@@ -63,6 +63,24 @@ export const updateTaskStatus = async (payload) => {
   return response.data;
 };
 
+export const getSceneDetails = async (sceneId) => {
+  const response = await api.get(`/api/scene/detail/${sceneId}`);
+  return response.data;
+};
+
+export const assignScene = async (payload) => {
+  const response = await api.patch("/api/scene/assign", payload);
+  return response.data;
+};
+
+export const updateSceneVideo = async (sceneId, formData, config = {}) => {
+  const response = await api.patch(`/api/scene/${sceneId}/video`, formData, {
+    headers: { "Content-Type": "multipart/form-data" },
+    ...config,
+  });
+  return response.data;
+};
+
 export const createInviteLink = async (payload) => {
   const response = await api.post("/api/invite/create", payload);
   return response.data;

@@ -20,6 +20,11 @@ const sceneSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "users",
     },
+    assignedTo: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "users",
+      default: null,
+    },
     duration: Number,
     comments: [
       {

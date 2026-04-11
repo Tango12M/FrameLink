@@ -114,13 +114,19 @@ const Dashboard = ({ toggleNotif }) => {
     formData.append("projectId", activeProject.id);
     formData.append("title", sceneTitle);
     formData.append("video", sceneFile);
+    setUploadProgress(0);
 
     try {
       await handleCreateScene(formData, {
         onUploadProgress: (progressEvent) => {
-          if (!progressEvent.total) return;
-          const percent = Math.round(
-            (progressEvent.loaded * 100) / progressEvent.total,
+          const total =
+            progressEvent.total ||
+            progressEvent?.nativeEvent?.total ||
+            progressEvent?.loaded ||
+            1;
+          const percent = Math.min(
+            100,
+            Math.round((progressEvent.loaded * 100) / total),
           );
           setUploadProgress(percent);
         },
@@ -478,6 +484,7 @@ const Dashboard = ({ toggleNotif }) => {
             setIsModalOpen,
             navigate,
             tasks: localTasks,
+            setTasks,
             handleMoveTask,
             columns,
             onOpenVideo,

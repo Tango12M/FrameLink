@@ -16,12 +16,14 @@ import {
 } from "lucide-react";
 import { useOutletContext } from "react-router-dom";
 import { useAuth } from "../../auth/hooks/useAuth";
+import { assignScene } from "../services/dashboard.api";
 
 const Workspace = () => {
   const {
     activeProject,
     navigate,
     tasks,
+    setTasks,
     columns,
     onOpenVideo,
     setIsModalOpen,
@@ -61,6 +63,60 @@ const Workspace = () => {
   const handleDragStart = (e, taskId) => {
     if (!isAdmin) return;
     e.dataTransfer.setData("taskId", taskId);
+  };
+
+  const [contextMenu, setContextMenu] = useState({
+    visible: false,
+    x: 0,
+    y: 0,
+    task: null,
+  });
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  const handleCardContextMenu = (e, task) => {
+    if (!isAdmin) return;
+    e.preventDefault();
+    setContextMenu({
+      visible: true,
+      x: e.clientX,
+      y: e.clientY,
+      task,
+    });
+  };
+
+  const closeContextMenu = () => {
+    setContextMenu({ visible: false, x: 0, y: 0, task: null });
+  };
+
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (contextMenu.visible) closeContextMenu();
+    };
+    window.addEventListener("click", handleClickOutside);
+    return () => window.removeEventListener("click", handleClickOutside);
+  }, [contextMenu.visible]);
+
+  const handleAssignScene = async (sceneId, userId) => {
+    if (!sceneId) return;
+    setIsAssigning(true);
+    try {
+      const response = await assignScene({ sceneId, userId });
+      const updatedScene = response.scene || response;
+      if (updatedScene && setTasks) {
+        setTasks((prevTasks) =>
+          prevTasks.map((task) =>
+            task.id === updatedScene._id || task.id === updatedScene.id
+              ? { ...task, assignedTo: updatedScene.assignedTo }
+              : task,
+          ),
+        );
+      }
+      closeContextMenu();
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsAssigning(false);
+    }
   };
 
   const handleDragOver = (e) => {
@@ -193,6 +249,7 @@ const Workspace = () => {
                           key={task.id}
                           draggable={isAdmin} // Enable Dragging
                           onDragStart={(e) => handleDragStart(e, task.id)} // Add Drag Handler
+                          onContextMenu={(e) => handleCardContextMenu(e, task)}
                           onClick={() => onOpenVideo(task)}
                           className={`bg-white dark:bg-[#1a1a1a] border border-neutral-200 dark:border-neutral-800 rounded-3xl p-5 hover:border-neutral-400 dark:hover:border-neutral-600 transition-colors shadow-sm group relative overflow-hidden ${
                             isAdmin ? "cursor-grab active:cursor-grabbing" : "cursor-pointer"
@@ -209,9 +266,20 @@ const Workspace = () => {
                               <div className="px-2 py-1 bg-neutral-100 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-md text-[10px] font-medium text-neutral-600 dark:text-neutral-400 uppercase tracking-wider">
                                 {statusLabel[task.status] || "Scene"}
                               </div>
-                              {isAdmin && (
-                                <GripHorizontal className="w-4 h-4 text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 transition-colors" />
-                              )}
+                              <div className="flex items-center gap-2">
+                                {task.assignedTo ? (
+                                  <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/30 px-2 py-1 rounded-full">
+                                    Assigned to {task.assignedTo.username || task.assignedTo.email}
+                                  </span>
+                                ) : (
+                                  <span className="text-[10px] font-semibold text-neutral-500 dark:text-neutral-400 bg-neutral-100 dark:bg-neutral-900 px-2 py-1 rounded-full">
+                                    Open
+                                  </span>
+                                )}
+                                {isAdmin && (
+                                  <GripHorizontal className="w-4 h-4 text-neutral-300 dark:text-neutral-700 group-hover:text-neutral-500 transition-colors" />
+                                )}
+                              </div>
                             </div>
                             <h4 className="text-neutral-900 dark:text-white font-medium mb-4 leading-tight">
                               {task.title || "Untitled Scene"}
@@ -236,6 +304,53 @@ const Workspace = () => {
               })}
             </div>
           </div>
+          {contextMenu.visible && (
+            <div
+              className="fixed z-[200] w-72 rounded-3xl border border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111] shadow-2xl overflow-hidden"
+              style={{ top: contextMenu.y, left: contextMenu.x }}
+            >
+              <div className="px-4 py-4 border-b border-neutral-200 dark:border-neutral-800">
+                <p className="text-sm font-medium text-neutral-900 dark:text-white">
+                  Assign scene to editor
+                </p>
+              </div>
+              <div className="max-h-72 overflow-y-auto">
+                {activeProject.members
+                  .filter((member) => member.role === "editor")
+                  .map((member) => {
+                    const memberId = member.user?._id || member.user;
+                    return (
+                      <button
+                        key={memberId}
+                        onClick={(event) => {
+                          event.stopPropagation();
+                          handleAssignScene(contextMenu.task.id, memberId);
+                        }}
+                        className="w-full text-left px-4 py-3 hover:bg-neutral-100 dark:hover:bg-neutral-900 transition-colors"
+                      >
+                        <div className="flex items-center justify-between gap-3">
+                          <span className="text-sm text-neutral-900 dark:text-white">
+                            {member.user?.username || member.user?.email || "Unknown"}
+                          </span>
+                          <span className="text-xs text-neutral-500 dark:text-neutral-400">
+                            {member.role}
+                          </span>
+                        </div>
+                      </button>
+                    );
+                  })}
+                <button
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    handleAssignScene(contextMenu.task.id, null);
+                  }}
+                  className="w-full text-left px-4 py-3 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 transition-colors"
+                >
+                  Unassign scene
+                </button>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

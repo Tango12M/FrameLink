@@ -10,6 +10,7 @@ const EmailVerifyModal = ({
   actionLoading,
   navigate,
   actionType,
+  onVerified,
 }) => {
   const [code, setCode] = useState(["", "", "", ""]);
   const inputRefs = useRef([]);
@@ -42,8 +43,12 @@ const EmailVerifyModal = ({
 
     const result = await handleVerifyEmail({ email, code: fullCode });
     if (result?.success) {
-      setShowVerifyModal(true);
-      navigate("/setup");
+      setShowVerifyModal(false);
+      if (onVerified) {
+        await onVerified();
+      } else {
+        navigate("/setup");
+      }
     }
   };
 

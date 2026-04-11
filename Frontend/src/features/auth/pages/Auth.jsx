@@ -77,21 +77,21 @@ const Auth = () => {
     });
     
     if (result?.success) {
-      try {
-        // Fetch user projects to determine redirect
-        const projectData = await getMyProjects();
-        const projects = projectData.projects || projectData || [];
-        
-        // If user has projects, redirect to dashboard; otherwise to setup
-        if (Array.isArray(projects) && projects.length > 0) {
-          navigate("/");
-        } else {
-          navigate("/setup");
-        }
-      } catch (error) {
-        // If fetch fails, default to setup
+      await redirectAfterLogin();
+    }
+  };
+
+  const redirectAfterLogin = async () => {
+    try {
+      const projectData = await getMyProjects();
+      const projects = projectData.projects || projectData || [];
+      if (Array.isArray(projects) && projects.length > 0) {
+        navigate("/");
+      } else {
         navigate("/setup");
       }
+    } catch (error) {
+      navigate("/setup");
     }
   };
 
@@ -110,6 +110,7 @@ const Auth = () => {
           actionLoading={actionLoading}
           navigate={navigate}
           actionType={actionType}
+          onVerified={redirectAfterLogin}
         />
       )}
 

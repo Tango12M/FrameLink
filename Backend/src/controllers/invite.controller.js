@@ -179,4 +179,3 @@ export const getInviteDetails = async (req, res) => {
     });
   }
 };
-};
