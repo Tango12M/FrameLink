@@ -32,6 +32,17 @@ if (!process.env.JWT_SECRET) {
   throw new Error("JWT_SECRET is not defined in environment variables");
 }
 
+if (!process.env.IMAGEKIT_PUBLIC_KEY) {
+  throw new Error("IMAGEKIT_PUBLIC_KEY is not defined in environment variables");
+}
+
+if (!process.env.IMAGEKIT_PRIVATE_KEY) {
+  throw new Error("IMAGEKIT_PRIVATE_KEY is not defined in environment variables");
+}
+if (!process.env.IMAGEKIT_URL_ENDPOINT) {
+  throw new Error("IMAGEKIT_URL_ENDPOINT is not defined in environment variables");
+}
+
 const config = {
   PORT: process.env.PORT,
   MONGO_URI: process.env.MONGO_URI,
@@ -41,6 +52,9 @@ const config = {
   BREVO_API_URL: process.env.BREVO_API_URL,
   MISTRAL_API_KEY: process.env.MISTRAL_API_KEY,
   JWT_SECRET: process.env.JWT_SECRET,
+  IMAGEKIT_PUBLIC_KEY: process.env.IMAGEKIT_PUBLIC_KEY,
+  IMAGEKIT_PRIVATE_KEY: process.env.IMAGEKIT_PRIVATE_KEY,
+  IMAGEKIT_URL_ENDPOINT: process.env.IMAGEKIT_URL_ENDPOINT,
 };
 
 export default config;

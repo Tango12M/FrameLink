@@ -28,13 +28,7 @@ const projectSchema = new mongoose.Schema(
       type: String,
       enum: ["raw", "editing", "review", "published"],
       default: "raw",
-    },
-    scenes: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "scene",
-      },
-    ],
+    }, 
     finalOutput: {
       summary: String,
       captions: String,
