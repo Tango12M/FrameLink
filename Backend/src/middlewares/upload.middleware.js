@@ -1,5 +1,6 @@
 import multer from "multer";
 import { uploadSize } from "../utils/constants.js";
+import { formatSize } from "../utils/util.js";
 
 const storage = multer.memoryStorage();
 
@@ -14,7 +15,7 @@ export const uploadVideo = (req, res, next) => {
       if (err.code === "LIMIT_FILE_SIZE") {
         return res.status(400).json({
           success: false,
-          message: `File too large (max ${uploadSize}MB)`,
+          message: `File too large (max ${formatSize(uploadSize)}MB)`,
         });
       }
 

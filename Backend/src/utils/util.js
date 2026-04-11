@@ -54,3 +54,5 @@ export function emailHTML(username, verificationCode) {
   </div>
 `;
 }
+
+export const formatSize = (bytes) => (bytes / (1024 * 1024)).toFixed(0);
