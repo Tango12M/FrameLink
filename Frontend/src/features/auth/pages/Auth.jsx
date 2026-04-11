@@ -14,18 +14,32 @@ import MagneticButton from "../../shared/components/MagnetButton";
 import EmailVerifyModal from "../components/EmailVerifyModal";
 import { ThemeContext } from "../../../app/theme.context";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const Auth = () => {
   const { theme, toggleTheme } = useContext(ThemeContext);
   const isDark = theme === "dark";
-
   const navigate = useNavigate();
+  const {
+    actionLoading,
+    handleRegister,
+    handleLogin,
+    handleVerifyEmail,
+    handleResendVerification,
+  } = useAuth();
 
-  const [isLogin, setIsLogin] = useState(false); // Defaults to Register
+  const [isLogin, setIsLogin] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [showVerifyModal, setShowVerifyModal] = useState(false); // Controls the Pop-up
+  const [showVerifyModal, setShowVerifyModal] = useState(false);
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const cardRef = useRef(null);
+
+  // Form state
+  const [formData, setFormData] = useState({
+    username: "",
+    email: "",
+    password: "",
+  });
 
   const handleMouseMove = (e) => {
     if (!cardRef.current) return;
@@ -33,17 +47,35 @@ const Auth = () => {
     setMousePos({ x: e.clientX - rect.left, y: e.clientY - rect.top });
   };
 
-  // Triggers the Verification Pop-up
-  const handleRegisterSubmit = (e) => {
-    e.preventDefault();
-    setShowVerifyModal(true);
+  const handleInputChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [name]: value,
+    }));
   };
 
-  // Logs the user into the app and sends them to the Setup screen!
-  const handleVerifySubmit = (e) => { 
+  const handleRegisterSubmit = async (e) => {
     e.preventDefault();
-    setShowVerifyModal(false);
-    navigate("/setup"); // <-- We changed this from "/" to "/setup"
+    const result = await handleRegister({
+      username: formData.username,
+      email: formData.email,
+      password: formData.password,
+    });
+    if (result?.success) {
+      setShowVerifyModal(true);
+    }
+  };
+
+  const handleLoginSubmit = async (e) => {
+    e.preventDefault();
+    const result = await handleLogin({
+      email: formData.email,
+      password: formData.password,
+    });
+    if (result?.success) {
+      navigate("/setup");
+    }
   };
 
   return (
@@ -54,18 +86,21 @@ const Auth = () => {
       {/* --- EMAIL VERIFICATION MODAL (POP-UP) --- */}
       {showVerifyModal && (
         <EmailVerifyModal
+          email={formData.email}
           setShowVerifyModal={setShowVerifyModal}
-          handleVerifySubmit={handleVerifySubmit}
+          handleVerifyEmail={handleVerifyEmail}
+          handleResendVerification={handleResendVerification}
+          actionLoading={actionLoading}
         />
       )}
 
       {/* Top Controls */}
       <button
-        onClick={() => navigate(-1)}
+        onClick={() => navigate("/landing")}
         className="absolute top-6 left-6 z-50 flex items-center gap-2 text-sm font-medium text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors group"
       >
         <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />{" "}
-        Back to Home
+        Back to Landing Page
       </button>
 
       <button
@@ -105,7 +140,7 @@ const Auth = () => {
 
           <form
             className="space-y-4"
-            onSubmit={isLogin ? handleVerifySubmit : handleRegisterSubmit}
+            onSubmit={isLogin ? handleLoginSubmit : handleRegisterSubmit}
           >
             <div
               className={`overflow-hidden transition-all duration-500 ease-in-out ${isLogin ? "max-h-0 opacity-0" : "max-h-25 opacity-100"}`}
@@ -119,7 +154,10 @@ const Auth = () => {
                   <input
                     required={!isLogin}
                     type="text"
+                    name="username"
                     placeholder="Jane Doe"
+                    value={formData.username}
+                    onChange={handleInputChange}
                     className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
                   />
                 </div>
@@ -135,7 +173,10 @@ const Auth = () => {
                 <input
                   required
                   type="email"
+                  name="email"
                   placeholder="you@creator.com"
+                  value={formData.email}
+                  onChange={handleInputChange}
                   className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-12 pr-4 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
                 />
               </div>
@@ -160,7 +201,10 @@ const Auth = () => {
                 <input
                   required
                   type={showPassword ? "text" : "password"}
+                  name="password"
                   placeholder="••••••••"
+                  value={formData.password}
+                  onChange={handleInputChange}
                   className="w-full bg-neutral-50 dark:bg-neutral-900/50 border border-neutral-200 dark:border-neutral-800 rounded-xl py-3 pl-12 pr-12 text-neutral-900 dark:text-white placeholder:text-neutral-400 dark:placeholder:text-neutral-600 focus:outline-none focus:border-neutral-400 dark:focus:border-neutral-500 transition-all"
                 />
                 <button
@@ -179,8 +223,18 @@ const Auth = () => {
 
             <div className="pt-4">
               <MagneticButton>
-                <button type="submit" className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg">
-                  {isLogin ? "Sign In" : "Create Account"}
+                <button
+                  type="submit"
+                  disabled={actionLoading}
+                  className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg disabled:bg-neutral-400 dark:disabled:bg-neutral-400 disabled:cursor-not-allowed"
+                >
+                  {actionLoading
+                    ? isLogin
+                      ? "Signing in..."
+                      : "Creating account..."
+                    : isLogin
+                      ? "Sign In"
+                      : "Create Account"}
                 </button>
               </MagneticButton>
             </div>
@@ -193,6 +247,7 @@ const Auth = () => {
               onClick={() => {
                 setIsLogin(!isLogin);
                 setShowPassword(false);
+                setFormData({ username: "", email: "", password: "" });
               }}
               className="text-neutral-900 dark:text-white font-medium hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors cursor-pointer"
             >

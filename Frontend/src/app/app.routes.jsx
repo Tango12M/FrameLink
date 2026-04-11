@@ -20,7 +20,11 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
   createBrowserRouter([
     {
       path: "/",
-      element: <Dashboard toggleNotif={toggleNotif} />,
+      element: (
+        <Protected>
+          <Dashboard toggleNotif={toggleNotif} />
+        </Protected>
+      ),
       errorElement: <ErrorPage />,
       children: [
         {
