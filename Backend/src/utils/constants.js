@@ -6,5 +6,7 @@ export const cookieOptions = {
 };
 
 export function createVerificationExpirationTime() {
-  return new Date(Date.now() + 10 * 60 * 1000); 
+  return new Date(Date.now() + 10 * 60 * 1000);
 }
+
+export const uploadSize = 10 * 1024 * 1024; // 10MB limit

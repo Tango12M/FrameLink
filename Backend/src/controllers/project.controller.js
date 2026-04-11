@@ -12,9 +12,16 @@ export const createProject = async (req, res) => {
       members: [{ user: userId, role: "admin" }],
     });
 
-    res.status(201).json(project);
+    res.status(201).json({
+      success: true,
+      message: "Project created successfully",
+      project,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -26,9 +33,16 @@ export const getUserProjects = async (req, res) => {
       "members.user": userId,
     });
 
-    res.json(projects);
+    res.json({
+      success: true,
+      message: "Projects retrieved successfully",
+      projects,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -38,29 +52,45 @@ export const addMember = async (req, res) => {
 
     const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
     }
 
     const isAdmin = project.members.some(
       (m) => m.user.toString() === req.user.id && m.role === "admin",
     );
     if (!isAdmin) {
-      return res.status(403).json({ error: "Admin only action" });
+      return res.status(403).json({
+        success: false,
+        message: "Admin only action",
+      });
     }
 
     const alreadyMember = project.members.some(
       (m) => m.user.toString() === userId,
     );
     if (alreadyMember) {
-      return res.status(400).json({ error: "User already a member" });
+      return res.status(400).json({
+        success: false,
+        message: "User already a member",
+      });
     }
 
     project.members.push({ user: userId, role });
     await project.save();
 
-    res.json(project);
+    res.json({
+      success: true,
+      message: "Member added successfully",
+      project,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -70,26 +100,42 @@ export const updateMemberRole = async (req, res) => {
 
     const project = await Project.findById(projectId);
     if (!project) {
-      return res.status(404).json({ error: "Project not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Project not found",
+      });
     }
 
     const isAdmin = project.members.some(
       (m) => m.user.toString() === req.user.id && m.role === "admin",
     );
     if (!isAdmin) {
-      return res.status(403).json({ error: "Admin only action" });
+      return res.status(403).json({
+        success: false,
+        message: "Admin only action",
+      });
     }
 
     const member = project.members.find((m) => m.user.toString() === userId);
     if (!member) {
-      return res.status(404).json({ error: "Member not found" });
+      return res.status(404).json({
+        success: false,
+        message: "Member not found",
+      });
     }
 
     member.role = role;
     await project.save();
 
-    res.json(project);
+    res.json({
+      success: true,
+      message: "Member role updated successfully",
+      project,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

@@ -12,9 +12,16 @@ export const addComment = async (req, res) => {
       timestamp,
     });
 
-    res.status(201).json(comment);
+    res.status(201).json({
+      success: true,
+      message: "Comment added successfully",
+      comment,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };
 
@@ -23,8 +30,15 @@ export const getComments = async (req, res) => {
     const { sceneId } = req.params;
 
     const comments = await Comment.find({ sceneId }).sort({ timestamp: 1 });
-    res.json(comments);
+    res.json({
+      success: true,
+      message: "Comments retrieved successfully",
+      comments,
+    });
   } catch (err) {
-    res.status(500).json({ error: err.message });
+    res.status(500).json({
+      success: false,
+      message: err.message,
+    });
   }
 };

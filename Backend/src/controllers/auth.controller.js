@@ -52,8 +52,8 @@ export async function register(req, res) {
   }
 
   res.status(201).json({
-    message: "User registered successfully",
     success: true,
+    message: "User registered successfully",
     user: {
       id: user._id,
       username: user.username,
@@ -147,6 +147,7 @@ export async function getMe(req, res) {
 
   res.status(200).json({
     success: true,
+    message: "User retrieved successfully",
     user: {
       id: user._id,
       username: user.username,
