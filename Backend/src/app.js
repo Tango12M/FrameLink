@@ -8,6 +8,12 @@ import cors from "cors";
 
 // Routes
 import authRouter from "./routes/auth.routes.js";
+import projectRouter from "./routes/project.routes.js";
+import sceneRouter from "./routes/scene.routes.js";
+import commentRouter from "./routes/comment.routes.js";
+import taskRouter from "./routes/task.routes.js";
+import inviteRouter from "./routes/invite.routes.js";
+import { authUser } from "./middlewares/auth.middleware.js";
 
 // Middlewares
 
@@ -29,6 +35,11 @@ app.use(
 );
 
 app.use("/api/auth", authRouter);
+app.use("/api/project", authUser, projectRouter);
+app.use("/api/scene", authUser, sceneRouter);
+app.use("/api/comment", authUser, commentRouter);
+app.use("/api/task", authUser, taskRouter);
+app.use("/api/invite", authUser, inviteRouter);
 
 app.use("/api/test", (req, res) => {
   res.status(200).send("Hello");
