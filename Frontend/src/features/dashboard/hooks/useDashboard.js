@@ -40,12 +40,12 @@ export const useDashboard = () => {
     }
   }
 
-  async function handleCreateProject() {
+ async function handleCreateProject(newProject) {
     setLoading(true);
     try {
-      const data = await fetchTasks();
-      setTasks(data.saves);
-
+      // Make sure to import createProject from your api file!
+      const data = await createProject(newProject); 
+      setProjects([data.project, ...projects]); // Update projects state
       return data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");

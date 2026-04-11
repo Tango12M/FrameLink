@@ -1,2 +1,93 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
+
+/* --- GLOBAL INPUT FIXES --- */
+input, select, textarea {
+  outline: none !important;
+  transition: all 0.3s ease;
+  background-color: transparent;
+}
+
+/* Light / Dark Input Text */
+html:not(.velvet) input, 
+html:not(.velvet) select, 
+html:not(.velvet) textarea {
+  color: inherit;
+}
+
+/* Velvet Input Text */
+html.velvet input, 
+html.velvet select, 
+html.velvet textarea {
+  color: var(--text-primary) !important;
+}
+
+::placeholder {
+  color: #a3a3a3 !important; 
+}
+html.velvet ::placeholder {
+  color: var(--text-muted) !important;
+}
+
+/* =======================================================
+   THE VELVET OPTIMIZATION BRIDGE 
+   Forces standard Tailwind classes to use your variables
+   ======================================================= */
+
+/* 1. Base Backgrounds */
+html.velvet .bg-neutral-50, 
+html.velvet .bg-neutral-100,
+html.velvet body { 
+  background-color: var(--bg-base) !important; 
+}
+
+/* 2. Cards, Navbars & Surfaces (FIXED FOR OPACITY) */
+html.velvet .bg-white, 
+html.velvet .bg-white\/60,
+html.velvet .bg-white\/70,
+html.velvet .bg-white\/80,
+html.velvet .bg-\[\#111\],
+html.velvet .bg-\[\#111\]\/60,
+html.velvet .bg-\[\#111\]\/70,
+html.velvet .bg-\[\#050505\],
+html.velvet .bg-\[\#0a0a0a\],
+html.velvet .bg-\[\#0a0a0a\]\/80 { 
+  background-color: var(--bg-surface) !important; 
+}
+
+/* 3. Buttons & Inverted Accents (Turns dark elements to Cream) */
+html.velvet .bg-neutral-900, 
+html.velvet .bg-neutral-950,
+html.velvet .bg-black { 
+  background-color: var(--text-primary) !important; 
+  color: var(--bg-base) !important; 
+}
+
+/* 4. Typography Mapping */
+/* Make primary text Cream */
+html.velvet .text-neutral-900, 
+html.velvet .text-black { 
+  color: var(--text-primary) !important; 
+}
+/* Make secondary text Blush/Rose */
+html.velvet .text-neutral-500, 
+html.velvet .text-neutral-400 { 
+  color: var(--text-secondary) !important; 
+}
+/* IMPORTANT: Force text on top of Cream buttons to be Dark Red */
+html.velvet .text-white {
+  color: var(--bg-base) !important; 
+}
+
+/* 5. Borders */
+html.velvet .border-neutral-200, 
+html.velvet .border-neutral-800 { 
+  border-color: var(--border) !important; 
+}
+
+/* 6. Subtle Hover States */
+html.velvet .hover\:bg-neutral-100:hover, 
+html.velvet .hover\:bg-neutral-800:hover,
+html.velvet .hover\:bg-neutral-900:hover { 
+  background-color: var(--border-hover) !important; 
+}

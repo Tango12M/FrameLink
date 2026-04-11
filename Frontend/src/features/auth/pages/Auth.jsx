@@ -39,11 +39,11 @@ const Auth = () => {
     setShowVerifyModal(true);
   };
 
-  // Logs the user into the app
+  // Logs the user into the app and sends them to the Setup screen!
   const handleVerifySubmit = (e) => { 
     e.preventDefault();
     setShowVerifyModal(false);
-    navigate("/");
+    navigate("/setup"); // <-- We changed this from "/" to "/setup"
   };
 
   return (
@@ -179,9 +179,9 @@ const Auth = () => {
 
             <div className="pt-4">
               <MagneticButton>
-                <div className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg">
+                <button type="submit" className="w-full bg-neutral-900 hover:bg-neutral-800 dark:bg-neutral-100 dark:hover:bg-white text-white dark:text-neutral-950 font-medium py-3.5 rounded-xl transition-colors shadow-lg">
                   {isLogin ? "Sign In" : "Create Account"}
-                </div>
+                </button>
               </MagneticButton>
             </div>
           </form>
