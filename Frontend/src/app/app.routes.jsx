@@ -2,12 +2,12 @@ import { createBrowserRouter } from "react-router-dom";
 
 // Pages
 import Dashboard from "../features/dashboard/pages/Dashboard";
+import TeamSetup from "../features/auth/pages/TeamSetup"; 
 import Auth from "../features/auth/pages/Auth";
 import LandingPage from "./pages/LandingPage";
 import ErrorPage from "./pages/ErrorPage";
-import TeamSetup from "../features/auth/pages/TeamSetup"; // <-- New page import
 
-// Components (No changes here)
+// Components 
 import WorkspaceSettings from "../features/dashboard/components/WorkspaceSettings";
 import Workspace from "../features/dashboard/components/Workspace";
 import Projects from "../features/dashboard/components/Projects";
@@ -20,7 +20,11 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
   createBrowserRouter([
     {
       path: "/",
-      element: <Dashboard toggleNotif={toggleNotif} />,
+      element: (
+        <Protected>
+          <Dashboard toggleNotif={toggleNotif} />
+        </Protected>
+      ),
       errorElement: <ErrorPage />,
       children: [
         {
@@ -56,8 +60,7 @@ export const createRouter = (toggleNotif, setIsCmdOpen) =>
           <Auth />
         </Guest>
       ),
-    },
-    // New route added right here
+    }, 
     {
       path: "/setup",
       element: <TeamSetup />,

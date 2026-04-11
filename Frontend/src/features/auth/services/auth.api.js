@@ -14,13 +14,18 @@ export const register = async ({ username, email, password }) => {
   return response.data;
 };
 
-export const login = async ({ username, password }) => {
-  const response = await api.post("/api/auth/login", { username, password });
+export const login = async ({ email, password }) => {
+  const response = await api.post("/api/auth/login", { email, password });
   return response.data;
 };
 
 export const getMe = async () => {
   const response = await api.get("/api/auth/get-me");
+  return response.data;
+};
+
+export const verifyEmail = async ({ email, code }) => {
+  const response = await api.post("/api/auth/verify-email", { email, code });
   return response.data;
 };
 

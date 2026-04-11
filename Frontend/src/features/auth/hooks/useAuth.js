@@ -6,6 +6,7 @@ import {
   logoutUser,
   register,
   resendVerificationEmail,
+  verifyEmail,
 } from "../services/auth.api";
 import { AuthContext } from "../auth.context";
 import { toast } from "react-toastify";
@@ -30,10 +31,10 @@ export const useAuth = () => {
     }
   }
 
-  async function handleLogin({ username, password }) {
+  async function handleLogin({ email, password }) {
     setActionLoading(true);
     try {
-      const data = await login({ username, password });
+      const data = await login({ email, password });
       toast.success(data.message);
       setUser(data.user);
       sessionStorage.removeItem("pendingEmail");
@@ -51,6 +52,7 @@ export const useAuth = () => {
     try {
       const data = await logoutUser();
       setUser(null);
+      sessionStorage.removeItem("pendingEmail");
       return data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
@@ -85,12 +87,26 @@ export const useAuth = () => {
     }
   }
 
+  async function handleVerifyEmail({ email, code }) {
+    setActionLoading(true);
+    try {
+      const data = await verifyEmail({ email, code });
+      toast.success(data.message);
+      setUser(data.user);
+      sessionStorage.removeItem("pendingEmail");
+      return data;
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid verification code");
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   async function handleResendVerification({ email }) {
     setActionLoading(true);
     try {
       const data = await resendVerificationEmail({ email });
       toast.success(data.message);
-
       return data;
     } catch (error) {
       toast.error(error.response?.data?.message || "Something went wrong");
@@ -108,6 +124,7 @@ export const useAuth = () => {
     handleLogout,
     handleDeleteAccount,
     handleGetMe,
+    handleVerifyEmail,
     handleResendVerification,
   };
 };
