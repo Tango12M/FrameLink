@@ -1,6 +1,4 @@
-/* global.css */
-
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500&family=DM+Mono:wght@400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,500;0,600;1,400;1,500&family=DM+Sans:wght@300;400;500;700&family=DM+Mono:wght@400&display=swap');
 
 *,
 *::before,
@@ -10,10 +8,11 @@
   padding: 0;
 }
 
+/* FIX: Changed to min-height so your cards stop overlapping! */
 html,
 body,
 #root {
-  height: 100%;
+  min-height: 100vh;
 }
 
 body {
@@ -27,12 +26,12 @@ body {
 
 ::selection {
   background: var(--accent);
-  color: #fff;
+  color: var(--bg-base);
 }
 
 ::-webkit-scrollbar {
-  width: 4px;
-  height: 4px;
+  width: 6px;
+  height: 6px;
 }
 
 ::-webkit-scrollbar-track {
@@ -41,5 +40,5 @@ body {
 
 ::-webkit-scrollbar-thumb {
   background: var(--border-hover);
-  border-radius: 4px;
+  border-radius: 10px;
 }

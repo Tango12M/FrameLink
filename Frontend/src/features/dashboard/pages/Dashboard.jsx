@@ -1,23 +1,23 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import {
   Layout,
   Folder,
   Users,
-  Settings,
   LogOut,
   X,
   UploadCloud,
   FileVideo,
   Menu,
-  Bell, // Added Bell icon
+  Bell,
 } from "lucide-react";
 import { NavLink, useNavigate, Outlet } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useDashboard } from "../hooks/useDashboard";
 
-// Imported your shared components based on your folder structure
+// Shared Components
 import ThemeToggle from "../../shared/components/ThemeToggle";
 import SearchBar from "../../shared/components/SearchBar";
+import SearchModal from "../../shared/components/SearchModal"; 
 
 const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
   const navigate = useNavigate();
@@ -35,16 +35,31 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
   const [mousePos, setMousePos] = useState({ x: 0, y: 0 });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  
+  // NEW: State for Logout Confirmation Modal
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  
   const [uploadProgress, setUploadProgress] = useState(0);
   const [activeTab, setActiveTab] = useState(null);
   
-  // Added for SearchBar if it controls a modal
   const [isCmdOpen, setIsCmdOpen] = useState(false); 
   
   const columns = ["Raw Footage", "Editing", "In Review", "Ready"];
 
   const handleGlobalMouseMove = (e) =>
     setMousePos({ x: e.clientX, y: e.clientY });
+
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
+        e.preventDefault(); 
+        setIsCmdOpen(true); 
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   const simulateUpload = () => {
     setUploadProgress(1);
@@ -72,6 +87,12 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
     }, 200);
   };
 
+  // NEW: Logout handler function
+  const handleConfirmLogout = () => {
+    setIsLogoutModalOpen(false);
+    navigate("/landing");
+  };
+
   return (
     <div
       onMouseMove={handleGlobalMouseMove}
@@ -84,6 +105,41 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
           background: `radial-gradient(800px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.03), transparent 80%)`,
         }}
       />
+
+      {/* --- LOGOUT CONFIRMATION MODAL --- */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
+          <div
+            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
+            onClick={() => setIsLogoutModalOpen(false)}
+          ></div>
+          <div className="relative bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-[fadeIn_0.2s_ease-out] flex flex-col items-center text-center">
+            <div className="w-12 h-12 bg-red-50 dark:bg-red-950/30 rounded-full flex items-center justify-center mb-4 text-red-500 border border-red-100 dark:border-red-900/50">
+              <LogOut className="w-6 h-6" />
+            </div>
+            <h3 className="text-xl font-medium text-neutral-900 dark:text-white mb-2">
+              Ready to leave?
+            </h3>
+            <p className="text-neutral-500 text-sm mb-6">
+              Are you sure you want to log out of FrameLink?
+            </p>
+            <div className="flex items-center gap-3 w-full">
+              <button
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="flex-1 py-2.5 px-4 rounded-xl border border-neutral-200 dark:border-neutral-800 text-neutral-700 dark:text-neutral-300 font-medium hover:bg-neutral-50 dark:hover:bg-neutral-900 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleConfirmLogout}
+                className="flex-1 py-2.5 px-4 rounded-xl bg-red-500 text-white font-medium hover:bg-red-600 transition-colors shadow-sm"
+              >
+                Log Out
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* --- UPLOAD MODAL --- */}
       {isModalOpen && (
@@ -192,26 +248,14 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
             >
               <Users className="w-4 h-4" /> Team
             </NavLink>
-            <NavLink
-              to="/settings"
-              className={({ isActive }) =>
-                `flex items-center gap-2 px-4 py-1.5 rounded-lg text-sm transition-all duration-300 ${
-                  isActive
-                    ? "bg-white dark:bg-[#222] text-neutral-900 dark:text-white font-medium shadow-sm"
-                    : "text-neutral-500 hover:text-neutral-900 dark:hover:text-white hover:bg-neutral-200/50 dark:hover:bg-neutral-800/50"
-                }`
-              }
-            >
-              <Settings className="w-4 h-4" /> Settings
-            </NavLink>
           </nav>
 
           {/* Right: Search, Theme, Notifications & Profile */}
           <div className="flex items-center gap-3 md:gap-5">
             
-            {/* Search Bar - Hidden on very small mobile screens to save space */}
+            {/* Search Bar */}
             <div className="hidden md:block">
-              <SearchBar searchLabel="Search..." setIsCmdOpen={setIsCmdOpen} />
+              <SearchBar searchLabel="Search..." setIsCmdOpen={() => setIsCmdOpen(true)} />
             </div>
 
             {/* Theme Toggle */}
@@ -245,7 +289,7 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
               <button
                 onClick={(e) => {
                   e.stopPropagation();
-                  navigate("/landing");
+                  setIsLogoutModalOpen(true); // UPDATED: Triggers modal instead of routing
                 }}
                 className="text-neutral-400 hover:text-red-500 transition-colors p-1"
                 title="Log Out"
@@ -262,7 +306,10 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
             
             {/* Mobile Search Input */}
             <div className="mb-2">
-              <SearchBar searchLabel="Search..." setIsCmdOpen={setIsCmdOpen} />
+              <SearchBar searchLabel="Search..." setIsCmdOpen={() => {
+                setIsSidebarOpen(false);
+                setIsCmdOpen(true);
+              }} />
             </div>
 
             <NavLink
@@ -298,22 +345,12 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
             >
               <Users className="w-5 h-5" /> Team
             </NavLink>
-            <NavLink
-              to="/settings"
-              onClick={() => setIsSidebarOpen(false)}
-              className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl transition-colors ${
-                  isActive ? "bg-neutral-100 dark:bg-neutral-800 text-neutral-900 dark:text-white font-medium" : "text-neutral-600 dark:text-neutral-400"
-                }`
-              }
-            >
-              <Settings className="w-5 h-5" /> Settings
-            </NavLink>
+            
             <div className="h-px bg-neutral-200 dark:bg-neutral-800 my-2"></div>
             <button
               onClick={() => {
                 setIsSidebarOpen(false);
-                navigate("/landing");
+                setIsLogoutModalOpen(true); // UPDATED: Triggers modal instead of routing
               }}
               className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors text-left"
             >
@@ -322,6 +359,9 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
           </div>
         )}
       </header>
+
+      {/* --- RENDER THE CMD+K SEARCH MODAL GLOBALLY --- */}
+      {isCmdOpen && <SearchModal setIsCmdOpen={setIsCmdOpen} />}
 
       {/* --- MAIN CONTENT AREA --- */}
       <main className="flex-1 overflow-hidden relative z-10 w-full">
@@ -339,8 +379,8 @@ const Dashboard = ({ onOpenVideo, activeProject, toggleNotif }) => {
             mousePos,
             setActiveTab,
             activeTab,
-            isCmdOpen,       // Passed down just in case child components need it
-            setIsCmdOpen,    // Passed down just in case child components need it
+            isCmdOpen,      
+            setIsCmdOpen,    
           }}
         />
       </main>

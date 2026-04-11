@@ -1,14 +1,28 @@
-import { useContext } from "react";
+import { useContext, useEffect } from "react";
 import { ThemeContext } from "../../../app/theme.context";
 import { Folder, Moon, Search, Settings, Sun } from "lucide-react";
 
-const SearchModal = ({ setIsCmdOpen, setCurrentPage }) => {
-  const { theme, toggleTheme } = useContext(ThemeContext);
-  const isDark = theme === "dark";
+const SearchModal = ({ setIsCmdOpen }) => {
+  // DEFENSIVE FIX: Adding "|| {}" prevents the "useContext(...) is undefined" crash
+  // if the ThemeProvider is missing or placed too high up in the tree.
+  const themeContext = useContext(ThemeContext) || {};
+  const isDark = themeContext.theme === "dark";
+
+  // Close modal when pressing the Escape key
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") {
+        setIsCmdOpen(false);
+      }
+    };
+    
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [setIsCmdOpen]);
 
   return (
     <div
-      className="fixed inset-0 z-200 bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[15vh]"
+      className="fixed inset-0 z-[200] bg-black/60 backdrop-blur-sm flex items-start justify-center pt-[15vh]"
       onClick={() => setIsCmdOpen(false)}
     >
       <div
@@ -33,7 +47,7 @@ const SearchModal = ({ setIsCmdOpen, setCurrentPage }) => {
           <button
             onClick={() => {
               setIsCmdOpen(false);
-              setCurrentPage("projects");
+              window.location.href = "/projects"; // Fixed Router Issue
             }}
             className="w-full text-left px-5 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 rounded-2xl text-neutral-900 dark:text-white flex items-center gap-4 transition-colors font-medium"
           >
@@ -42,7 +56,7 @@ const SearchModal = ({ setIsCmdOpen, setCurrentPage }) => {
           <button
             onClick={() => {
               setIsCmdOpen(false);
-              setCurrentPage("settings");
+              window.location.href = "/settings"; // Fixed Router Issue
             }}
             className="w-full text-left px-5 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 rounded-2xl text-neutral-900 dark:text-white flex items-center gap-4 transition-colors font-medium"
           >
@@ -51,7 +65,10 @@ const SearchModal = ({ setIsCmdOpen, setCurrentPage }) => {
           <button
             onClick={() => {
               setIsCmdOpen(false);
-              toggleTheme();
+              // Safely call toggleTheme only if it exists
+              if (themeContext.toggleTheme) {
+                themeContext.toggleTheme();
+              }
             }}
             className="w-full text-left px-5 py-4 hover:bg-neutral-100 dark:hover:bg-neutral-800/50 rounded-2xl text-neutral-900 dark:text-white flex items-center gap-4 transition-colors font-medium"
           >
