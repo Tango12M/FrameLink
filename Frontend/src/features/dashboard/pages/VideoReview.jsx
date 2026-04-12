@@ -47,6 +47,8 @@ const VideoReview = () => {
     approved: "Ready",
   };
 
+  const getSceneVideoUrl = (scene) => scene?.userVideoUrl || scene?.videoUrl;
+
   useEffect(() => {
     const fetchScene = async () => {
       if (!id) return;
@@ -112,12 +114,13 @@ const VideoReview = () => {
   };
 
   const handleDownloadVideo = () => {
-    if (!scene?.videoUrl) {
+    const videoUrl = getSceneVideoUrl(scene);
+    if (!videoUrl) {
       toast.error("No video available to download.");
       return;
     }
     const link = document.createElement("a");
-    link.href = scene.videoUrl;
+    link.href = videoUrl;
     const safeSceneTitle =
       scene && scene.title
         ? scene.title.replace(new RegExp("[^a-z0-9]", "gi"), "_")
@@ -290,8 +293,8 @@ const VideoReview = () => {
                 onTimeUpdate={(e) => setCurrentVideoTime(e.target.currentTime)}
                 className="w-full aspect-video outline-none"
                 src={
-                  scene?.videoUrl
-                    ? scene.videoUrl
+                  getSceneVideoUrl(scene)
+                    ? getSceneVideoUrl(scene)
                     : "https://www.w3schools.com/html/mov_bbb.mp4"
                 }
               />

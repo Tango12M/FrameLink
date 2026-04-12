@@ -2,6 +2,39 @@ import Project from "../models/project.model.js";
 import Scene from "../models/scene.model.js";
 import imagekit from "../services/imagekit.service.js";
 
+const getEditorVideo = (scene, userId) => {
+  if (!scene?.editorVideos) return null;
+  return scene.editorVideos.find(
+    (version) => version.editor?.toString() === userId,
+  );
+};
+
+const attachUserVideoUrl = (scene, userId) => {
+  if (!scene) return scene;
+  const sceneObj = scene.toObject ? scene.toObject() : { ...scene };
+  const editorVersion = getEditorVideo(sceneObj, userId);
+  sceneObj.userVideoUrl = editorVersion?.videoUrl || sceneObj.videoUrl;
+  return sceneObj;
+};
+
+const updateEditorVersion = (scene, userId, videoUrl) => {
+  scene.editorVideos = scene.editorVideos || [];
+  const existingIndex = scene.editorVideos.findIndex(
+    (version) => version.editor?.toString() === userId,
+  );
+  const newVersion = {
+    editor: userId,
+    videoUrl,
+    uploadedAt: new Date(),
+  };
+  if (existingIndex >= 0) {
+    scene.editorVideos[existingIndex] = newVersion;
+  } else {
+    scene.editorVideos.push(newVersion);
+  }
+  return scene;
+};
+
 export const createScene = async (req, res) => {
   try {
     const { title, projectId } = req.body;
@@ -110,10 +143,12 @@ export const getScenesByProject = async (req, res) => {
       });
     }
 
+    const scenesWithUserVideo = scenes.map((scene) => attachUserVideoUrl(scene, req.user.id));
+
     res.json({
       success: true,
       message: "Scenes retrieved successfully",
-      scenes,
+      scenes: scenesWithUserVideo,
     });
   } catch (err) {
     res.status(500).json({
@@ -170,7 +205,7 @@ export const getSceneById = async (req, res) => {
     res.json({
       success: true,
       message: "Scene retrieved successfully",
-      scene,
+      scene: attachUserVideoUrl(scene, req.user.id),
     });
   } catch (err) {
     res.status(500).json({
@@ -307,13 +342,18 @@ export const updateSceneVideo = async (req, res) => {
       });
     }
 
-    scene.videoUrl = uploadedFile.url;
+    if (!isAdmin && assignedToId && assignedToId === req.user.id) {
+      updateEditorVersion(scene, req.user.id, uploadedFile.url);
+    } else {
+      scene.videoUrl = uploadedFile.url;
+    }
+
     await scene.save();
 
     res.json({
       success: true,
       message: "Video updated successfully",
-      scene,
+      scene: attachUserVideoUrl(scene, req.user.id),
     });
   } catch (err) {
     res.status(500).json({

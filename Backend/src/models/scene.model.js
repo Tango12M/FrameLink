@@ -25,6 +25,16 @@ const sceneSchema = new mongoose.Schema(
       ref: "users",
       default: null,
     },
+    editorVideos: [
+      {
+        editor: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "users",
+        },
+        videoUrl: String,
+        uploadedAt: Date,
+      },
+    ],
     duration: Number,
     comments: [
       {
