@@ -31,7 +31,7 @@ const Projects = () => {
       description: projectDescription || "No description provided.",
     };
 
-    const response = await handleCreateProject?.(payload);
+    const response = await handleCreateProject(payload);
     if (!response?.success) {
       return;
     }

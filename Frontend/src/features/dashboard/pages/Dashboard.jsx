@@ -495,6 +495,7 @@ const Dashboard = ({ toggleNotif }) => {
             activeTab,
             isCmdOpen,
             setIsCmdOpen,
+            handleCreateProject
           }}
         />
       </main>

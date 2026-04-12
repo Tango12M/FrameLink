@@ -368,68 +368,69 @@ const VideoReview = () => {
 
           {/* Right Side: Comments */}
           <div className="w-full lg:w-[420px] bg-white dark:bg-[#111] border border-neutral-200 dark:border-neutral-800 flex flex-col h-full shrink-0 shadow-[-10px_0_30px_rgba(0,0,0,0.02)] z-10">
-          <div className="p-5 border-b border-neutral-200 dark:border-neutral-800 shrink-0 bg-neutral-50/50 dark:bg-neutral-900/20">
-            <h3 className="font-medium text-neutral-900 dark:text-white">
-              Timecoded Notes
-            </h3>
-            <p className="text-sm text-neutral-500">
-              {comments.length} comments
-            </p>
-          </div>
+            <div className="p-5 border-b border-neutral-200 dark:border-neutral-800 shrink-0 bg-neutral-50/50 dark:bg-neutral-900/20">
+              <h3 className="font-medium text-neutral-900 dark:text-white">
+                Timecoded Notes
+              </h3>
+              <p className="text-sm text-neutral-500">
+                {comments.length} comments
+              </p>
+            </div>
 
-          <div className="flex-1 overflow-y-auto p-5 space-y-5">
-            {comments.map((comment) => (
-              <div key={comment.id} className="group">
-                <div className="flex items-center justify-between mb-1.5">
-                  <span className="text-sm font-medium text-neutral-900 dark:text-white">
-                    {comment.user}
-                  </span>
-                  <button
-                    onClick={() => handleSeek(comment.time)}
-                    className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 px-2 py-1 rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white transition-all shadow-sm"
-                  >
-                    <Clock className="w-3 h-3" /> {comment.displayTime}
-                  </button>
+            <div className="flex-1 overflow-y-auto p-5 space-y-5">
+              {comments.map((comment) => (
+                <div key={comment.id} className="group">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-sm font-medium text-neutral-900 dark:text-white">
+                      {comment.user}
+                    </span>
+                    <button
+                      onClick={() => handleSeek(comment.time)}
+                      className="flex items-center gap-1.5 text-xs font-bold text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 border border-blue-100 dark:border-blue-800/50 px-2 py-1 rounded-md hover:bg-blue-600 hover:text-white dark:hover:bg-blue-500 dark:hover:text-white transition-all shadow-sm"
+                    >
+                      <Clock className="w-3 h-3" /> {comment.displayTime}
+                    </button>
+                  </div>
+                  <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed bg-neutral-50 dark:bg-neutral-900/50 p-3 rounded-xl border border-neutral-100 dark:border-neutral-800/50">
+                    {comment.text}
+                  </p>
                 </div>
-                <p className="text-sm text-neutral-600 dark:text-neutral-400 leading-relaxed bg-neutral-50 dark:bg-neutral-900/50 p-3 rounded-xl border border-neutral-100 dark:border-neutral-800/50">
-                  {comment.text}
-                </p>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
 
-          <div className="p-5 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111] shrink-0">
-            {/* --- UPDATED: Form input now has a timecode badge inside it! --- */}
-            <form
-              onSubmit={handleAddComment}
-              className="relative flex items-center bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl transition-shadow focus-within:ring-2 focus-within:ring-neutral-900 dark:focus-within:ring-white"
-            >
-              {/* Live Timecode Badge */}
-              <div className="pl-3 pr-2 py-3 flex items-center justify-center border-r border-neutral-200 dark:border-neutral-800 shrink-0">
-                <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded-md">
-                  <Clock className="w-3 h-3" />
-                  {formatTime(currentVideoTime)}
-                </div>
-              </div>
-
-              {/* Text Input */}
-              <input
-                type="text"
-                placeholder="Add a note..."
-                value={newComment}
-                onChange={(e) => setNewComment(e.target.value)}
-                className="w-full bg-transparent pl-3 pr-12 py-3.5 text-sm text-neutral-900 dark:text-white focus:outline-none placeholder:text-neutral-400"
-              />
-
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={!newComment.trim()}
-                className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+            <div className="p-5 border-t border-neutral-200 dark:border-neutral-800 bg-white dark:bg-[#111] shrink-0">
+              {/* --- UPDATED: Form input now has a timecode badge inside it! --- */}
+              <form
+                onSubmit={handleAddComment}
+                className="relative flex items-center bg-neutral-50 dark:bg-neutral-900 border border-neutral-200 dark:border-neutral-800 rounded-xl transition-shadow focus-within:ring-2 focus-within:ring-neutral-900 dark:focus-within:ring-white"
               >
-                <Send className="w-4 h-4" />
-              </button>
-            </form>
+                {/* Live Timecode Badge */}
+                <div className="pl-3 pr-2 py-3 flex items-center justify-center border-r border-neutral-200 dark:border-neutral-800 shrink-0">
+                  <div className="flex items-center gap-1.5 text-xs font-mono font-medium text-neutral-500 dark:text-neutral-400 bg-neutral-200/50 dark:bg-neutral-800/50 px-2 py-1 rounded-md">
+                    <Clock className="w-3 h-3" />
+                    {formatTime(currentVideoTime)}
+                  </div>
+                </div>
+
+                {/* Text Input */}
+                <input
+                  type="text"
+                  placeholder="Add a note..."
+                  value={newComment}
+                  onChange={(e) => setNewComment(e.target.value)}
+                  className="w-full bg-transparent pl-3 pr-12 py-3.5 text-sm text-neutral-900 dark:text-white focus:outline-none placeholder:text-neutral-400"
+                />
+
+                {/* Submit Button */}
+                <button
+                  type="submit"
+                  disabled={!newComment.trim()}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-neutral-900 dark:bg-white text-white dark:text-neutral-900 rounded-lg disabled:opacity-50 transition-all hover:scale-105 active:scale-95"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </form>
+            </div>
           </div>
         </div>
       </div>
